@@ -1,0 +1,66 @@
+C:\Users\TestGroup\Downloads\HU1_Date\bin\Debug\net8.0\appsettings.Development.json
+C:\Users\TestGroup\Downloads\HU1_Date\bin\Debug\net8.0\appsettings.json
+C:\Users\TestGroup\Downloads\HU1_Date\bin\Debug\net8.0\HU1_Date.staticwebassets.runtime.json
+C:\Users\TestGroup\Downloads\HU1_Date\bin\Debug\net8.0\HU1_Date.staticwebassets.endpoints.json
+C:\Users\TestGroup\Downloads\HU1_Date\bin\Debug\net8.0\HU1_Date.exe
+C:\Users\TestGroup\Downloads\HU1_Date\bin\Debug\net8.0\HU1_Date.deps.json
+C:\Users\TestGroup\Downloads\HU1_Date\bin\Debug\net8.0\HU1_Date.runtimeconfig.json
+C:\Users\TestGroup\Downloads\HU1_Date\bin\Debug\net8.0\HU1_Date.dll
+C:\Users\TestGroup\Downloads\HU1_Date\bin\Debug\net8.0\HU1_Date.pdb
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\HU1_Date.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\HU1_Date.AssemblyInfoInputs.cache
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\HU1_Date.AssemblyInfo.cs
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\HU1_Date.csproj.CoreCompileInputs.cache
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\HU1_Date.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\HU1_Date.RazorAssemblyInfo.cache
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\HU1_Date.RazorAssemblyInfo.cs
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\rjimswa.dswa.cache.json
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\scopedcss\bundle\HU1_Date.styles.css
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\scopedcss\projectbundle\HU1_Date.bundle.scp.css
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\staticwebassets.build.json
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\staticwebassets.build.json.cache
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\staticwebassets.development.json
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\HU1_Date.dll
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\refint\HU1_Date.dll
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\HU1_Date.pdb
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\HU1_Date.genruntimeconfig.cache
+C:\Users\TestGroup\Downloads\HU1_Date\obj\Debug\net8.0\ref\HU1_Date.dll
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\bin\Debug\net8.0\appsettings.Development.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\bin\Debug\net8.0\appsettings.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\bin\Debug\net8.0\HU1_Date.staticwebassets.runtime.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\bin\Debug\net8.0\HU1_Date.staticwebassets.endpoints.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\bin\Debug\net8.0\HU1_Date.exe
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\bin\Debug\net8.0\HU1_Date.deps.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\bin\Debug\net8.0\HU1_Date.runtimeconfig.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\bin\Debug\net8.0\HU1_Date.dll
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\bin\Debug\net8.0\HU1_Date.pdb
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\HU1_Date.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\HU1_Date.AssemblyInfoInputs.cache
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\HU1_Date.AssemblyInfo.cs
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\HU1_Date.csproj.CoreCompileInputs.cache
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\HU1_Date.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\HU1_Date.RazorAssemblyInfo.cache
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\HU1_Date.RazorAssemblyInfo.cs
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\rjimswa.dswa.cache.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\scopedcss\bundle\HU1_Date.styles.css
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\scopedcss\projectbundle\HU1_Date.bundle.scp.css
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\staticwebassets.build.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\staticwebassets.build.json.cache
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\staticwebassets.development.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\HU1_Date.dll
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\refint\HU1_Date.dll
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\HU1_Date.pdb
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\HU1_Date.genruntimeconfig.cache
+C:\Users\arant\OneDrive\Documents\Proyectos cd\HU1_Date\obj\Debug\net8.0\ref\HU1_Date.dll

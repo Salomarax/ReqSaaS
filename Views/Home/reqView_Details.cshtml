@@ -1,0 +1,326 @@
+﻿@{
+    ViewData["Title"] = "Detalle de requisito";
+    ViewData["NoLayout"] = true; /* quita esta línea si usas _Layout */
+}
+
+<!-- Fuente -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(to right, #d4fc79, #96e6a1);
+        height: 100vh;
+        display: flex;
+    }
+
+    /* Sidebar (igual que tu otra vista) */
+    .sidebar {
+        width: 260px;
+        background: #2ecc40;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        justify-content: space-between;
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+        box-shadow: 3px 0 10px rgba(0, 0, 0, .2);
+    }
+
+        .sidebar h2 {
+            margin: 0 0 5px;
+            font-size: 22px;
+        }
+
+        .sidebar p {
+            margin: 0 0 20px;
+            font-size: 12px;
+            opacity: .7;
+        }
+
+        .sidebar a {
+            color: #fff;
+            text-decoration: none;
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: .2s;
+        }
+
+            .sidebar a:hover {
+                background: #2e7d32;
+                transform: translateX(5px);
+            }
+
+        .sidebar hr {
+            border-color: rgba(255, 255, 255, .2);
+            margin: 15px 0;
+        }
+
+    .logout {
+        background: #145214;
+        color: #fff;
+        font-weight: 700;
+        text-align: center;
+        padding: 10px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: .2s;
+    }
+
+        .logout:hover {
+            background: #0f3e11;
+            transform: scale(1.05);
+        }
+
+    /* Contenido */
+    .content {
+        flex: 1;
+        background: #f4f6f9;
+        padding: 32px;
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+        overflow: auto;
+        box-shadow: inset 0 0 30px rgba(0, 0, 0, .05);
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+        .header h1 {
+            margin: 0 0 6px;
+            color: #2e7d32;
+            font-size: 28px;
+        }
+
+        .header p {
+            margin: 0;
+            color: #555;
+            font-size: 14px;
+        }
+
+    /* Cards */
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(180px, 1fr));
+        gap: 14px;
+        margin: 20px 0 18px;
+    }
+
+    .card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 16px 18px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, .08);
+    }
+
+        .card .label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .card .value {
+            font-weight: 600;
+            color: #111827;
+        }
+
+    /* Tabla */
+    .table-wrap {
+        background: #fff;
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, .1);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    th,
+    td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+    }
+
+    th {
+        color: #374151;
+        background: #f9fafb;
+        font-weight: 600;
+    }
+
+    .chip {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 10px;
+        border-radius: 999px;
+        display: inline-block;
+    }
+
+        .chip.ok {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+
+        /* En Cumplimiento */
+        .chip.warn {
+            background: #fff8e1;
+            color: #a37500;
+        }
+
+        /* En Proceso */
+        .chip.bad {
+            background: #ffebee;
+            color: #b71c1c;
+        }
+
+        /* Incumplido */
+        .chip.na {
+            background: #eceff1;
+            color: #455a64;
+        }
+
+    /* No Aplica */
+    .evid a {
+        text-decoration: none;
+    }
+
+    .toolbar {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin: 14px 0 6px;
+    }
+
+    .btn {
+        border: 1px solid #2e7d32;
+        background: #2e7d32;
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: .2s;
+        text-decoration: none;
+    }
+
+        .btn:hover {
+            filter: brightness(.95);
+        }
+
+        .btn.outline {
+            background: #fff;
+            color: #2e7d32;
+        }
+</style>
+
+<!-- Layout -->
+<div class="sidebar">
+    <div>
+        <h2>ReqSaaS</h2>
+        <p>Plataforma de Requisitos</p>
+
+        <a href="@Url.Action("Index", "Home")">Dashboard</a>
+        <a href="@Url.Action("ReqView", "Home")">Estado de requisito</a>
+        <a href="#">Agregar requisito</a>
+
+        <hr />
+
+        <a href="#">Editar evidencia</a>
+        <a href="@Url.Action("ReqView_Details", "Home")">Detalle de requisito</a>
+        <a href="#">Evaluar requisito</a>
+    </div>
+
+    <a class="logout" href="@Url.Action("Index", "Home")">Cerrar sesión</a>
+</div>
+
+<div class="content">
+    <div class="header">
+        <h1>Requisitos Normativos con Estado de Cumplimiento</h1>
+        <p>Detalle del requisito y trazabilidad de evidencias</p>
+    </div>
+
+    <!-- Cabecera del requisito (valores de ejemplo; reemplaza por tu modelo si lo conectas) -->
+    <div class="cards">
+        <div class="card">
+            <div class="label">Nombre</div>
+            <div class="value">Ley Marco de Ciberseguridad (Ley N° 21.663)</div>
+        </div>
+
+        <div class="card">
+            <div class="label">Tipo</div>
+            <div class="value">Ley (Nacional)</div>
+        </div>
+
+        <div class="card">
+            <div class="label">Año de Vigencia</div>
+            <div class="value">2024 - 2025</div>
+        </div>
+
+        <div class="card">
+            <div class="label">Área o Rubro</div>
+            <div class="value">Ciberseguridad</div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <a class="btn outline" href="@Url.Action("ReqView", "Home")">← Volver al listado</a>
+        <a class="btn" href="#">Editar requisito</a>
+    </div>
+
+    <!-- Tabla de artículos -->
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:32%">Item</th>
+                    <th style="width:15%">Estado</th>
+                    <th style="width:38%">Forma de Cumplimiento</th>
+                    <th style="width:15%">Evidencia</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Artículo 1°: Objetivo</td>
+                    <td><span class="chip ok">En Cumplimiento</span></td>
+                    <td>Informativo - No requiere acciones</td>
+                    <td class="evid">—</td>
+                </tr>
+                <tr>
+                    <td>Artículo 4°: Supervisión</td>
+                    <td><span class="chip ok">En Cumplimiento</span></td>
+                    <td>Informativo - No requiere acciones</td>
+                    <td class="evid">—</td>
+                </tr>
+                <tr>
+                    <td>Artículo 7°: Disposiciones…</td>
+                    <td><span class="chip ok">En Cumplimiento</span></td>
+                    <td>Procedimientos y controles de ciberseguridad</td>
+                    <td class="evid">
+                        <a href="/files/evidencial.pdf">evidencial.pdf</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Artículo 8°: Monitoreo</td>
+                    <td><span class="chip warn">En Proceso</span></td>
+                    <td>Se están calibrando herramientas de monitoreo digital</td>
+                    <td class="evid">
+                        <a href="/files/Presupuesto.pdf">Presupuesto.pdf</a> ·
+                        <a href="/files/GC.pdf">GC.pdf</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

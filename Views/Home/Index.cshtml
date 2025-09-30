@@ -1,0 +1,145 @@
+﻿@{
+    ViewData["Title"] = "Calendario de Feriados";
+    ViewData["NoLayout"] = true;
+}
+
+<!-- Estilos de FullCalendar -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to right, #a8e063, #56ab2f);
+        height: 100vh;
+    }
+
+    .container {
+        display: flex;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .calendar-box, .login-box {
+        width: 50%;
+        height: 80%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .calendar-content {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        text-align: center;
+        width: 90%;
+    }
+
+    .login-box {
+        background: #eaf6ff;
+        border-top-left-radius: 20px;
+        border-bottom-left-radius: 20px;
+    }
+
+    .login-form {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.15);
+        width: 80%;
+        max-width: 300px;
+        text-align: center;
+    }
+
+        .login-form input {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .login-form button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+            .login-form button:hover {
+                background-color: #0056b3;
+            }
+</style>
+
+<div class="container">
+    <!-- Calendario -->
+    <div class="calendar-box">
+        <div class="calendar-content">
+            <h2 style="color: green;">Calendario de Feriados</h2>
+            <div id="calendar"></div>
+            <br />
+            <div id="feriadoList"></div>
+        </div>
+    </div>
+
+    <!-- Login -->
+    <div class="login-box">
+        <div class="login-form">
+            <h3>Iniciar Sesión</h3>
+            <form method="post" asp-action="Login" asp-controller="Home">
+                <input type="email" name="email" placeholder="Correo electrónico" required />
+                <input type="password" name="password" placeholder="Contraseña" required />
+                <button type="submit">Entrar</button>
+            </form>
+
+            <p style="font-size: 0.85em;">¿No tienes cuenta? <a href="#">Regístrate</a></p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var calendarEl = document.getElementById('calendar');
+            var feriadoList = document.getElementById('feriadoList');
+
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                events: async function (info, successCallback, failureCallback) {
+                    try {
+                        const res = await fetch('/Home/GetFeriados');
+                        const data = await res.json();
+
+                        // Mostrar en el calendario
+                        const eventos = data.map(f => ({
+                            title: f.nombre,
+                            start: f.fecha
+                        }));
+
+                        successCallback(eventos);
+
+                        // Mostrar debajo del calendario
+                        const mesActual = new Date().getMonth() + 1;
+                        const feriadosMes = data.filter(f => new Date(f.fecha).getMonth() + 1 === mesActual);
+
+                        feriadoList.innerHTML = "<h4>Feriados del mes:</h4><ul>" +
+                            feriadosMes.map(f => `<li>${f.fecha} - ${f.nombre}${f.irrenunciable ? " (Irrenunciable)" : ""}</li>`).join('') +
+                            "</ul>";
+                    } catch (error) {
+                        feriadoList.innerHTML = "<p style='color: red;'>No se pudo cargar la información de feriados.</p>";
+                        failureCallback(error);
+                    }
+                }
+            });
+
+            calendar.render();
+        });
+    </script>
+}

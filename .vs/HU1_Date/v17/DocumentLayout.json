@@ -1,0 +1,117 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|c:\\users\\arant\\onedrive\\documents\\proyectos cd\\hu1_date\\views\\home\\reqview_details.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|solutionrelative:views\\home\\reqview_details.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|c:\\users\\arant\\onedrive\\documents\\proyectos cd\\hu1_date\\views\\home\\reqview.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|solutionrelative:views\\home\\reqview.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|c:\\users\\arant\\onedrive\\documents\\proyectos cd\\hu1_date\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|solutionrelative:controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|c:\\users\\arant\\onedrive\\documents\\proyectos cd\\hu1_date\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|solutionrelative:views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|c:\\users\\arant\\onedrive\\documents\\proyectos cd\\hu1_date\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|solutionrelative:views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|c:\\users\\arant\\onedrive\\documents\\proyectos cd\\hu1_date\\models\\feriado.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95152C81-3D82-46C2-AC41-3291FA946AA3}|HU1_Date.csproj|solutionrelative:models\\feriado.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "reqView_Details.cshtml",
+              "DocumentMoniker": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Views\\Home\\reqView_Details.cshtml",
+              "RelativeDocumentMoniker": "Views\\Home\\reqView_Details.cshtml",
+              "ToolTip": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Views\\Home\\reqView_Details.cshtml",
+              "RelativeToolTip": "Views\\Home\\reqView_Details.cshtml",
+              "ViewState": "AgIAADMBAAAAAAAAAAAAAEYBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-30T00:14:33.256Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "reqView.cshtml",
+              "DocumentMoniker": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Views\\Home\\reqView.cshtml",
+              "RelativeDocumentMoniker": "Views\\Home\\reqView.cshtml",
+              "ToolTip": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Views\\Home\\reqView.cshtml",
+              "RelativeToolTip": "Views\\Home\\reqView.cshtml",
+              "ViewState": "AgIAAL4AAAAAAAAAAAAAABIBAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-04T00:37:57.19Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAACYAAAAAAAAAAAAIwEAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-07-28T23:42:38.589Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Feriado.cs",
+              "DocumentMoniker": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Models\\Feriado.cs",
+              "RelativeDocumentMoniker": "Models\\Feriado.cs",
+              "ToolTip": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Models\\Feriado.cs",
+              "RelativeToolTip": "Models\\Feriado.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-28T23:35:56.524Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Views\\Home\\Index.cshtml",
+              "RelativeDocumentMoniker": "Views\\Home\\Index.cshtml",
+              "ToolTip": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Views\\Home\\Index.cshtml",
+              "RelativeToolTip": "Views\\Home\\Index.cshtml",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAAAF0AAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-07-27T17:40:00.19Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "HomeController.cs",
+              "DocumentMoniker": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Controllers\\HomeController.cs",
+              "RelativeDocumentMoniker": "Controllers\\HomeController.cs",
+              "ToolTip": "C:\\Users\\arant\\OneDrive\\Documents\\Proyectos cd\\HU1_Date\\Controllers\\HomeController.cs",
+              "RelativeToolTip": "Controllers\\HomeController.cs",
+              "ViewState": "AgIAACkAAAAAAAAAAAAowDgAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-27T17:39:53.12Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
