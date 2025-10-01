@@ -1,0 +1,21 @@
+﻿# VS / IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Build / publicación
+bin/
+obj/
+out/
+artifacts/
+
+# Registros
+*.log
+
+# Publish profiles
+**/Properties/PublishProfiles/
+
+# Secretos locales (no subir)
+appsettings.Development.json
+secrets.json

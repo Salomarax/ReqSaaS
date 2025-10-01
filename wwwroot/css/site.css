@@ -1,22 +1,425 @@
+/* =========================================================
+   site.css — estilos globales de ReqSaaS
+   ========================================================= */
+
+/* 1) Base tipografía y tamaño */
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    html {
+        font-size: 16px;
+    }
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
-  margin-bottom: 60px;
+    margin: 0; /* antes tenía margin-bottom del template */
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    color: #0f172a;
+    background-color: #ffffff; /* se sobreescribe por .content/.plain-shell */
 }
+
+/* 2) Enfoques accesibles (respeta Bootstrap) */
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+/* =========================================================
+   3) Layouts
+   ========================================================= */
+
+/* --- Modo App con Sidebar --- */
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(180deg,#a7f3a0 0%,#7cd67a 100%);
+    align-items: stretch;
+}
+
+.sidebar {
+    width: 260px;
+    background: #2ecc40;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    box-shadow: 3px 0 10px rgba(0,0,0,.15);
+    flex: 0 0 260px;
+}
+
+.brand {
+    font-weight: 800;
+    font-size: 22px;
+    margin-bottom: 6px;
+}
+
+    .brand small {
+        display: block;
+        font-weight: 400;
+        font-size: 12px;
+        opacity: .85;
+    }
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+    .nav a {
+        color: #fff;
+        text-decoration: none;
+        padding: 10px 14px;
+        border-radius: 10px;
+        display: flex;
+        gap: 10px;
+        transition: .15s;
+    }
+
+        .nav a:hover {
+            background: #1f9f32;
+            transform: translateX(4px);
+        }
+
+        .nav a.active {
+            background: #0f5132;
+        }
+
+.sidebar hr {
+    border-color: rgba(255,255,255,.25);
+    margin: 16px 0;
+}
+
+.logout a {
+    background: #0f3e11;
+    color: #fff;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+}
+
+/* Área de contenido de la app */
+.content {
+    flex: 1;
+    background: #f4f6f9;
+    padding: 28px;
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    box-shadow: inset 0 0 30px rgba(0,0,0,.05);
+    overflow: auto;
+    min-width: 0;
+}
+
+/* --- Modo Plano (login / landing) --- */
+.plain-shell {
+    min-height: 100vh;
+    background: linear-gradient(180deg,#a8e063 0%, #56ab2f 100%); /* fondo verde */
+}
+
+.plain-content {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive para sidebar (opcional) */
+@media (max-width: 992px) {
+    .app-shell {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        border-radius: 0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .content {
+        border-radius: 0;
+        padding: 16px;
+    }
+}
+
+/* =========================================================
+   4) Componentes comunes (reutilizables en todas las vistas)
+   ========================================================= */
+
+/* Contenedor de página */
+.page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 18px;
+}
+
+.page-header {
+    text-align: center;
+    margin: 8px 0 18px;
+}
+
+    .page-header h2 {
+        color: #2e7d32;
+        margin: 0 0 6px;
+    }
+
+    .page-header p {
+        color: #64748b;
+        margin: 0;
+    }
+
+/* Tarjetas / paneles */
+.card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(0,0,0,.08);
+    padding: 18px;
+}
+
+.card-lg {
+    padding: 22px;
+    border-radius: 18px;
+}
+
+/* Filtros */
+.filters {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+    .filters input,
+    .filters select,
+    .filters button {
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        font-size: 14px;
+        background: #fff;
+    }
+
+    .filters button {
+        background: #2e7d32;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+    }
+
+        .filters button:hover {
+            filter: brightness(.95);
+        }
+
+/* Tabla limpia */
+.table-wrap {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 10px 24px rgba(0,0,0,.08);
+}
+
+.table-clean {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+    .table-clean th, .table-clean td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #eef2f7;
+        text-align: left;
+    }
+
+    .table-clean th {
+        background: #f8fafc;
+        color: #0f172a;
+        font-weight: 600;
+    }
+
+/* Badges / Chips */
+.badge {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-purple {
+    background: #e9d5ff;
+    color: #4c1d95;
+}
+
+.badge-blue {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-green {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.chip {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+    .chip.ok {
+        background: #e8f5e9;
+        color: #1b5e20;
+    }
+    /* En Cumplimiento */
+    .chip.warn {
+        background: #fff8e1;
+        color: #a37500;
+    }
+    /* En Proceso */
+    .chip.bad {
+        background: #ffebee;
+        color: #b71c1c;
+    }
+    /* Incumplido */
+    .chip.na {
+        background: #eceff1;
+        color: #455a64;
+    }
+/* No Aplica */
+
+/* Barra de progreso */
+.progress {
+    background: #e5e7eb;
+    border-radius: 10px;
+    height: 8px;
+    width: 160px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+    .progress > div {
+        background: #16a34a;
+        height: 100%;
+    }
+
+/* Grid de estadísticas (cabeceras del Detalle) */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.stat {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: 0 10px 24px rgba(0,0,0,.08);
+}
+
+    .stat .label {
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 6px;
+    }
+
+    .stat .value {
+        font-weight: 600;
+        color: #111827;
+    }
+
+/* Tabs (para “Agregar requisito”: Manual / BCN / PDF) */
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.tab {
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    cursor: pointer;
+}
+
+    .tab.active {
+        background: #0ea5e9;
+        color: #fff;
+        border-color: #0ea5e9;
+    }
+
+/* Utilidades menores */
+.text-muted {
+    color: #64748b !important;
+}
+
+.btn-green {
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+    .btn-green:hover {
+        filter: brightness(.95);
+    }
+
+.btn-outline-green {
+    background: #fff;
+    color: #2e7d32;
+    border: 1px solid #2e7d32;
+    border-radius: 10px;
+    padding: 8px 12px;
+}
+
+    .btn-outline-green:hover {
+        filter: brightness(.98);
+    }
+
+/* =========================================================
+   5) Ajustes específicos ligeros
+   ========================================================= */
+
+/* FullCalendar: deja que el contenedor defina la altura.
+   (Se recomienda setear height desde JS con calendar options) */
+.fc .fc-scrollgrid, .fc .fc-scroller-harness {
+    background: #fff;
+    border-radius: 10px;
+}
+
+/* Links en tablas de evidencias */
+.table-clean a {
+    text-decoration: none;
+    color: #0d6efd;
+}
+
+    .table-clean a:hover {
+        text-decoration: underline;
+    }

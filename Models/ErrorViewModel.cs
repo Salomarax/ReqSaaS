@@ -1,4 +1,4 @@
-namespace HU1_Date.Models
+namespace ReqSaaS_1.Models
 {
     public class ErrorViewModel
     {
