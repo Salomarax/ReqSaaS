@@ -1,10 +1,8 @@
 ﻿@{
+    ViewData["UseSideBar"] = false;
     ViewData["Title"] = "Calendario de Feriados";
-    ViewData["NoLayout"] = true;
-}
 
-<!-- Estilos de FullCalendar -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+}
 
 <style>
     body {
@@ -92,6 +90,7 @@
         <div class="login-form">
             <h3>Iniciar Sesión</h3>
             <form method="post" asp-action="Login" asp-controller="Home">
+                @Html.AntiForgeryToken()
                 <input type="email" name="email" placeholder="Correo electrónico" required />
                 <input type="password" name="password" placeholder="Contraseña" required />
                 <button type="submit">Entrar</button>
@@ -114,27 +113,39 @@
                 locale: 'es',
                 events: async function (info, successCallback, failureCallback) {
                     try {
-                        const res = await fetch('/Home/GetFeriados');
+                        const url = '@Url.Action("GetFeriados", "Home")';
+                        const res = await fetch(url);
+
+                        if (!res.ok) {
+                            const msg = await res.text();
+                            throw new Error(msg || ('HTTP ' + res.status));
+                        }
+
                         const data = await res.json();
 
-                        // Mostrar en el calendario
+                        // Mostrar en el calendario (soporta nombre/fecha en camel o Pascal)
                         const eventos = data.map(f => ({
-                            title: f.nombre,
-                            start: f.fecha
+                            title: (f.nombre ?? f.Nombre) || 'Feriado',
+                            start: (f.fecha ?? f.Fecha)
                         }));
 
                         successCallback(eventos);
 
                         // Mostrar debajo del calendario
                         const mesActual = new Date().getMonth() + 1;
-                        const feriadosMes = data.filter(f => new Date(f.fecha).getMonth() + 1 === mesActual);
+                        const feriadosMes = data.filter(f => new Date((f.fecha ?? f.Fecha)).getMonth() + 1 === mesActual);
 
                         feriadoList.innerHTML = "<h4>Feriados del mes:</h4><ul>" +
-                            feriadosMes.map(f => `<li>${f.fecha} - ${f.nombre}${f.irrenunciable ? " (Irrenunciable)" : ""}</li>`).join('') +
+                            feriadosMes.map(f => {
+                                const fecha = (f.fecha ?? f.Fecha);
+                                const nombre = (f.nombre ?? f.Nombre);
+                                const irr = (f.irrenunciable ?? f.Irrenunciable) ? " (Irrenunciable)" : "";
+                                return `<li> ${nombre}${irr}</li>`;
+                            }).join('') +
                             "</ul>";
                     } catch (error) {
                         feriadoList.innerHTML = "<p style='color: red;'>No se pudo cargar la información de feriados.</p>";
-                        failureCallback(error);
+                        if (failureCallback) failureCallback(error);
                     }
                 }
             });

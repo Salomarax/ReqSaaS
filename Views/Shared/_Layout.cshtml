@@ -1,64 +1,48 @@
-﻿<!DOCTYPE html>
+﻿@* Views/Shared/_Layout.cshtml *@
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] - HU1_Date</title>
+
+    <!-- CSS: Bootstrap primero, luego tus estilos -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/HU1_Date.styles.css" asp-append-version="true" />
+    <!-- Fuente (opcional, pero recomendada por site.css) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
+    @RenderSection("Styles", required: false)
 </head>
 <body>
-    @if (ViewData["NoLayout"] == null)
-    {
-        <header>
-            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-                <div class="container-fluid">
-                    <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">HU1_Date</a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                            aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                        <ul class="navbar-nav flex-grow-1">
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </nav>
-        </header>
+    @{
+        var useSideBar = ViewData["UseSideBar"] is true;  // <— misma clave que usas en las vistas
     }
 
-    @if (ViewData["NoLayout"] == null)
+    @if (useSideBar)
     {
-        <div class="container">
-            <main role="main" class="pb-3">
+        <!-- MODO SIDEBAR (app) -->
+        <div class="app-shell">
+            @await Html.PartialAsync("_SideBar")
+            <main class="content">
                 @RenderBody()
             </main>
         </div>
     }
     else
     {
-        @RenderBody()
+        <!-- MODO PLANO (login/landing, sin navbar/footers) -->
+        <div class="plain-shell">
+            <main class="plain-content">
+                @RenderBody()
+            </main>
+        </div>
     }
 
-    @if (ViewData["NoLayout"] == null)
-    {
-        <footer class="border-top footer text-muted">
-            <div class="container">
-                &copy; 2025 - HU1_Date - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-            </div>
-        </footer>
-    }
-
+    <!-- Scripts globales -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    @RenderSection("Scripts", required: false)
 </body>
 </html>

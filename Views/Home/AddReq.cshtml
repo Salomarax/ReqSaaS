@@ -1,0 +1,344 @@
+﻿@{
+    ViewData["Title"] = "Agregar requisito";
+    ViewData["NoLayout"] = true;
+    Layout = "_Layout";
+    ViewData["UseSidebar"] = true; 
+
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Inter',sans-serif;
+        background: #f7faf9;
+        min-height: 100vh;
+    }
+
+    .wrap {
+        max-width: 1100px;
+        margin: 28px auto;
+        padding: 0 16px;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .tab {
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        cursor: pointer;
+    }
+
+        .tab.active {
+            background: #0ea5e9;
+            color: #fff;
+            border-color: #0ea5e9;
+        }
+
+    .card {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(0,0,0,.06);
+        padding: 18px;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        color: #0f172a
+    }
+
+    .hint {
+        color: #64748b;
+        font-size: .95rem;
+        margin-top: -4px;
+        margin-bottom: 14px;
+    }
+
+    .grid {
+        display: grid;
+        gap: 12px;
+    }
+
+    .g2 {
+        grid-template-columns: 1fr 1fr
+    }
+
+    label {
+        font-weight: 600;
+        color: #111827
+    }
+
+    input[type="text"], textarea, select, input[type="file"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        background: #fff
+    }
+
+    textarea {
+        min-height: 110px;
+        resize: vertical
+    }
+
+    .btn {
+        border: none;
+        background: #16a34a;
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer
+    }
+
+        .btn.gray {
+            background: #e5e7eb;
+            color: #111827
+        }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .95rem
+    }
+
+    th, td {
+        padding: 10px;
+        border-bottom: 1px solid #eef2f7;
+        text-align: left
+    }
+
+    th {
+        background: #f8fafc;
+        color: #0f172a
+    }
+
+    .actions button {
+        border: none;
+        background: #0ea5e9;
+        color: #fff;
+        padding: 6px 10px;
+        border-radius: 8px;
+        cursor: pointer
+    }
+
+    .pill {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #0f172a;
+        font-size: .85rem
+    }
+</style>
+
+<div class="wrap">
+    <div class="tabs">
+        <button class="tab active" data-pane="manual">Manual</button>
+        <button class="tab" data-pane="bcn">Importar desde BCN</button>
+        <button class="tab" data-pane="pdf">Cargar documento</button>
+    </div>
+
+    <!-- MANUAL -->
+    <div id="pane-manual" class="card">
+        <div class="section-title">
+            <span>📄</span><h3>Información General</h3>
+        </div>
+        <div class="hint">Completa todos los campos requeridos.</div>
+
+        <form asp-action="CreateRequirement" asp-controller="Home" method="post">
+            @Html.AntiForgeryToken()
+            <div class="grid">
+                <div>
+                    <label>Título del Requisito *</label>
+                    <input type="text" name="Titulo" placeholder="Ej: Cumplimiento de WCAG 2.1 AA para accesibilidad web" required />
+                </div>
+                <div>
+                    <label>Entidad emisora *</label>
+                    <input type="text" name="Entidad" placeholder="Ej: Ministerio Secretaría General de la Presidencia / BCN" required />
+                </div>
+
+                <div>
+                    <label>Tipo de requisito *</label>
+                    <select name="Tipo" required>
+                        <option value="">-- Seleccionar --</option>
+                        <option>Ley</option>
+                        <option>Norma</option>
+                        <option>Regulación</option>
+                        <option>Decreto</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Ítem (artículo o requerimiento a cumplir) *</label>
+                    <input type="text" name="Item" placeholder="Ej: Art. 5 — Requisitos de accesibilidad" required />
+                </div>
+
+                <div style="grid-column:1/-1">
+                    <label>Descripción *</label>
+                    <textarea name="Descripcion" placeholder="Describe el requisito, alcance y objetivos..." required></textarea>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:14px;">
+                <button type="submit" class="btn">Guardar requisito</button>
+                <a class="btn gray" href="@Url.Action("ReqView", "Home")">Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- BCN -->
+    <div id="pane-bcn" class="card" style="display:none">
+        <div class="section-title">
+            <span>🏛️</span><h3>Importar desde BCN</h3>
+        </div>
+        <div class="hint">Busca en la BCN, selecciona un resultado y lo mapeamos a los campos requeridos.</div>
+
+        <form asp-action="SearchBCN" asp-controller="Home" method="get" id="form-buscar-bcn" onsubmit="return false;">
+            <div class="grid g2">
+                <div>
+                    <label>Buscar en BCN</label>
+                    <input id="q" type="text" placeholder="Ej: Ley 21.663 ciberseguridad" />
+                </div>
+                <div style="display:flex;align-items:flex-end;gap:8px">
+                    <button type="button" class="btn" onclick="buscarBCN()">Buscar</button>
+                    <button type="button" class="btn gray" onclick="limpiarBCN()">Limpiar</button>
+                </div>
+            </div>
+        </form>
+
+        <div style="margin-top:14px">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Entidad</th>
+                        <th>Tipo</th>
+                        <th>Código/ID</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="bcn-results">
+                    <tr><td colspan="5" class="hint">Sin resultados. Realiza una búsqueda.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <form asp-action="ImportFromBCN" asp-controller="Home" method="post" id="form-import-bcn" style="margin-top:16px;display:none;">
+            @Html.AntiForgeryToken()
+            <!-- Campos ocultos que se llenan con la fila seleccionada -->
+            <input type="hidden" name="Titulo" />
+            <input type="hidden" name="Entidad" />
+            <input type="hidden" name="Tipo" />
+            <input type="hidden" name="Item" />
+            <input type="hidden" name="Descripcion" />
+            <div class="pill" id="preview-bcn">Seleccionaste: —</div>
+            <div style="margin-top:10px">
+                <button type="submit" class="btn">Importar seleccionado</button>
+                <button type="button" class="btn gray" onclick="cancelarSeleccion()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- PDF -->
+    <div id="pane-pdf" class="card" style="display:none">
+        <div class="section-title">
+            <span>📎</span><h3>Cargar documento (PDF)</h3>
+        </div>
+        <div class="hint">Sube un PDF y extraeremos automáticamente título, entidad, tipo, ítem y descripción.</div>
+
+        <form asp-action="UploadDocument" asp-controller="Home" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <div class="grid">
+                <div>
+                    <label>Archivo PDF *</label>
+                    <input type="file" name="Archivo" accept="application/pdf" required />
+                </div>
+            </div>
+            <div style="margin-top:12px">
+                <button type="submit" class="btn">Procesar PDF</button>
+                <a class="btn gray" href="@Url.Action("ReqView", "Home")">Cancelar</a>
+            </div>
+        </form>
+        <p class="hint" style="margin-top:10px">⚠️ Por ahora solo sube y guarda; la extracción la conectamos después.</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Tabs
+        document.querySelectorAll('.tab').forEach(t=>{
+          t.addEventListener('click',()=>{
+            document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+            t.classList.add('active');
+            const pane = t.dataset.pane;
+            document.querySelectorAll('[id^="pane-"]').forEach(p=>p.style.display='none');
+            document.getElementById('pane-'+pane).style.display='block';
+          });
+        });
+
+        // ------ BCN (stub) ------
+        async function buscarBCN(){
+          const q = document.getElementById('q').value.trim();
+          const tbody = document.getElementById('bcn-results');
+          tbody.innerHTML = `<tr><td colspan="5">Buscando “${q}”...</td></tr>`;
+
+          try{
+            // TODO: conectar a tu acción real que envuelva la API de BCN (GET /Home/SearchBCN?q=...)
+            // Por ahora, simulo 2 resultados:
+            const mock = [
+              { titulo:"Ley Marco de Ciberseguridad (21.663)", entidad:"BCN", tipo:"Ley", codigo:"21663", item:"Art.8", descripcion:"Obligaciones de monitoreo y reporte."},
+              { titulo:"Decreto Supremo Nº 594", entidad:"MINSAL", tipo:"Decreto", codigo:"DS594", item:"Art.37", descripcion:"Condiciones sanitarias básicas."}
+            ];
+
+            if(!q){ tbody.innerHTML = `<tr><td colspan="5" class="hint">Ingresa un término de búsqueda.</td></tr>`; return; }
+
+            const rows = mock
+              .filter(x=>x.titulo.toLowerCase().includes(q.toLowerCase()))
+              .map(x=>`<tr>
+                <td>${x.titulo}</td>
+                <td>${x.entidad}</td>
+                <td>${x.tipo}</td>
+                <td>${x.codigo}</td>
+                <td class="actions"><button type="button" onclick='selectBCN(${JSON.stringify(x).replace(/'/g,"&apos;")})'>Seleccionar</button></td>
+              </tr>`).join('');
+
+            tbody.innerHTML = rows || `<tr><td colspan="5" class="hint">Sin resultados para “${q}”.</td></tr>`;
+          }catch(e){
+            tbody.innerHTML = `<tr><td colspan="5" style="color:#b91c1c">Error al buscar.</td></tr>`;
+          }
+        }
+
+        function selectBCN(x){
+          const f = document.getElementById('form-import-bcn');
+          f.style.display = 'block';
+          f.Titulo.value = x.titulo;
+          f.Entidad.value = x.entidad;
+          f.Tipo.value = x.tipo;
+          f.Item.value = x.item;
+          f.Descripcion.value = x.descripcion;
+          document.getElementById('preview-bcn').textContent =
+            `Seleccionaste: ${x.titulo} • ${x.entidad} • ${x.tipo} • ${x.item}`;
+        }
+
+        function limpiarBCN(){
+          document.getElementById('q').value = '';
+          document.getElementById('bcn-results').innerHTML = `<tr><td colspan="5" class="hint">Sin resultados. Realiza una búsqueda.</td></tr>`;
+          cancelarSeleccion();
+        }
+
+        function cancelarSeleccion(){
+          const f = document.getElementById('form-import-bcn');
+          f.style.display = 'none';
+          document.getElementById('preview-bcn').textContent = 'Seleccionaste: —';
+        }
+    </script>
+}
