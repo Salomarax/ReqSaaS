@@ -1,236 +1,269 @@
+ï»¿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ReqSaaS_1.Data;
+using ReqSaaS_1.Data.Entities;
 using ReqSaaS_1.Models;
+using ReqSaaS_1.Utilities;
+using System;
 using System.Collections.Generic;
-using System.Net.Http;
+using System.Linq;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+[Authorize]
 public class HomeController : Controller
 {
-    // Vista principal (Index)
-    public IActionResult Index()
+    private readonly AppDbContext _db;
+
+    public HomeController(AppDbContext db)
     {
-        return View();
+        _db = db;
     }
 
-    // Acción GET para obtener feriados desde una API externa
+    // --- HOME (pantalla de login) ---
+    // Debe ser anÃ³nimo para evitar loop con LoginPath = /Home/Index
+    [AllowAnonymous]
+    [HttpGet]
+    public IActionResult Index()
+    {
+        return View(new LoginVM());
+    }
+
+    // --- FERIADOS (anÃ³nimo; robusto ante JSON raro/fallas) ---
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetFeriados()
     {
-        var url = "https://api.boostr.cl/holidays.json";
+        const string url = "https://api.boostr.cl/holidays.json";
 
         try
         {
-            using var client = new HttpClient();
-            var json = await client.GetStringAsync(url);
+            using var http = new HttpClient();
+            var json = await http.GetStringAsync(url);
 
-            // 1) Intento directo: array plano [{fecha, nombre, irrenunciable}, ...]
-            try
-            {
-                var direct = JsonSerializer.Deserialize<List<Feriado>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                if (direct != null && direct.Count > 0)
-                    return Json(Normalizar(direct));
-            }
-            catch { /* Ignorar y probar otras formas */ }
-
-            // 2) Intento genérico: detectar "data", "items", "feriados", etc.
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            IEnumerable<Feriado> extraidos = TryExtract(root);
-            var lista = new List<Feriado>(extraidos);
-            return Json(Normalizar(lista));
-        }
-        catch (Exception ex)
-        {
-            // Si falla la API externa, devolvemos 500 con JSON (para que el front no reviente)
-            return StatusCode(500, new { message = "No se pudo cargar la información de los feriados.", detail = ex.Message });
-        }
-    }
-
-    // --- Helpers ---
-
-    // Acepta varios nombres de campos y normaliza a tu modelo
-    private static IEnumerable<Feriado> TryExtract(JsonElement root)
-    {
-        var salida = new List<Feriado>();
-
-        // caso objeto con arreglo dentro (data/items/feriados/holidays)
-        if (root.ValueKind == JsonValueKind.Object)
-        {
-            foreach (var prop in new[] { "feriados", "holidays", "data", "items", "result", "results" })
+            static string? S(JsonElement el, params string[] names)
             {
-                if (root.TryGetProperty(prop, out var arr) && arr.ValueKind == JsonValueKind.Array)
-                {
-                    salida.AddRange(FromArray(arr));
-                    return salida;
-                }
+                foreach (var n in names)
+                    if (el.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.String)
+                        return v.GetString();
+                return null;
             }
-        }
-
-        // caso arreglo en la raíz
-        if (root.ValueKind == JsonValueKind.Array)
-        {
-            salida.AddRange(FromArray(root));
-            return salida;
-        }
-
-        // si nada calza, devolver vacío
-        return salida;
-    }
-
-    private static IEnumerable<Feriado> FromArray(JsonElement arr)
-    {
-        foreach (var el in arr.EnumerateArray())
-        {
-            // nombres posibles de campos (fecha/date/day), (nombre/title/name), (irrenunciable/mandatory/etc.)
-            string? fecha = GetString(el, "fecha", "date", "day", "fecha_iso");
-            string? nombre = GetString(el, "nombre", "title", "name", "descripcion", "description");
-            bool irrenunciable = GetBool(el, "irrenunciable", "mandatory", "isHoliday", "obligatorio");
-
-            // Si trae un objeto "date" con "iso"
-            if (fecha == null && el.TryGetProperty("date", out var dateObj) && dateObj.ValueKind == JsonValueKind.Object)
+            static bool B(JsonElement el, params string[] names)
             {
-                fecha = GetString(dateObj, "iso", "fecha");
+                foreach (var n in names)
+                    if (el.TryGetProperty(n, out var v))
+                    {
+                        if (v.ValueKind == JsonValueKind.True) return true;
+                        if (v.ValueKind == JsonValueKind.False) return false;
+                        if (v.ValueKind == JsonValueKind.String && bool.TryParse(v.GetString(), out var b)) return b;
+                        if (v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i)) return i != 0;
+                    }
+                return false;
+            }
+            static string D(string s)
+            {
+                if (DateTime.TryParse(s, out var dt)) return dt.ToString("yyyy-MM-dd");
+                s = s.Replace('/', '-');
+                return s.Length >= 10 ? s[..10] : s;
             }
 
-            // Normaliza formato de fecha a YYYY-MM-DD si viene con hora
-            if (!string.IsNullOrWhiteSpace(fecha))
+            IEnumerable<JsonElement> rows = Array.Empty<JsonElement>();
+            if (root.ValueKind == JsonValueKind.Array) rows = root.EnumerateArray();
+            else if (root.ValueKind == JsonValueKind.Object)
+                foreach (var k in new[] { "feriados", "holidays", "data", "items", "result", "results" })
+                    if (root.TryGetProperty(k, out var arr) && arr.ValueKind == JsonValueKind.Array)
+                    { rows = arr.EnumerateArray(); break; }
+
+            var list = new List<object>();
+            foreach (var el in rows)
             {
-                if (DateTime.TryParse(fecha, out var dt))
-                    fecha = dt.ToString("yyyy-MM-dd");
+                var fecha = S(el, "fecha", "date", "day", "fecha_iso");
+                if (fecha == null && el.TryGetProperty("date", out var dobj) && dobj.ValueKind == JsonValueKind.Object)
+                    fecha = S(dobj, "iso", "fecha");
+
+                var nombre = S(el, "nombre", "title", "name", "descripcion", "description");
+                var irr = B(el, "irrenunciable", "mandatory", "isHoliday", "obligatorio");
+
+                if (!string.IsNullOrWhiteSpace(fecha) && !string.IsNullOrWhiteSpace(nombre))
+                    list.Add(new { Fecha = D(fecha), Nombre = nombre, Irrenunciable = irr });
             }
 
-            if (!string.IsNullOrWhiteSpace(fecha) && !string.IsNullOrWhiteSpace(nombre))
-            {
-                yield return new Feriado
-                {
-                    Fecha = fecha,
-                    Nombre = nombre,
-                    Irrenunciable = irrenunciable
-                };
-            }
+            return Json(list);
         }
-    }
-
-    private static string? GetString(JsonElement el, params string[] names)
-    {
-        foreach (var n in names)
+        catch
         {
-            if (el.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.String)
-                return v.GetString();
+            return Json(Array.Empty<object>());
         }
-        return null;
     }
 
-    private static bool GetBool(JsonElement el, params string[] names)
-    {
-        foreach (var n in names)
-        {
-            if (el.TryGetProperty(n, out var v))
-            {
-                if (v.ValueKind == JsonValueKind.True) return true;
-                if (v.ValueKind == JsonValueKind.False) return false;
-                if (v.ValueKind == JsonValueKind.String && bool.TryParse(v.GetString(), out var b)) return b;
-                if (v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i)) return i != 0;
-            }
-        }
-        return false;
-    }
-
-    private static List<Feriado> Normalizar(List<Feriado> items)
-    {
-        // Evita nulos y duplicados simples (mismo día + nombre)
-        var list = new List<Feriado>();
-        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var f in items)
-        {
-            if (string.IsNullOrWhiteSpace(f.Fecha) || string.IsNullOrWhiteSpace(f.Nombre)) continue;
-            var key = $"{f.Fecha}|{f.Nombre}";
-            if (set.Add(key)) list.Add(f);
-        }
-        return list;
-    }
-
-
-
-// Acción POST para procesar el login
-[HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Login(string email, string password)
-    {
-        // Autenticación básica 
-        if (email == "admin@example.com" && password == "1234")
-        {
-            return RedirectToAction("ReqView");
-        }
-
-        // Si no es válido, vuelve a Index con un error
-        ViewData["Error"] = "Correo o contraseña incorrectos";
-        return View("Index");
-    }
-
-    // abrir detalles
+    // --- LOGIN (GET) ---
+    [AllowAnonymous]
     [HttpGet]
-    public IActionResult ReqView_Details()
+    public IActionResult Login(string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = returnUrl;
+        // Usamos Index.cshtml como vista de login
+        return View("Index", new LoginVM());
+    }
+
+    // --- LOGIN (POST) ---
+    [AllowAnonymous]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Login(LoginVM model, string? returnUrl = null)
+    {
+        if (!ModelState.IsValid)
+            return View("Index", model);
+
+        var normalized = RutUtils.Normalize(model.Rut);
+        if (normalized == null)
+        {
+            ModelState.AddModelError(nameof(model.Rut), "RUT o DV invÃ¡lido.");
+            return View("Index", model);
+        }
+
+        var candidatos = await _db.Credenciales
+            .AsNoTracking()
+            .Where(c => c.IdOrganismo == normalized)
+            .ToListAsync();
+
+        if (candidatos.Count == 0)
+        {
+            ModelState.AddModelError(string.Empty, $"Credenciales invÃ¡lidas. (RUT buscado: {normalized})");
+            return View("Index", model);
+        }
+
+        Credencial? match = null;
+        foreach (var c in candidatos)
+        {
+            if (!string.IsNullOrWhiteSpace(c.ClaveHash) &&
+                BCrypt.Net.BCrypt.Verify(model.Password, c.ClaveHash))
+            {
+                match = c; break;
+            }
+        }
+
+        if (match == null)
+        {
+            ModelState.AddModelError(string.Empty, "Credenciales invÃ¡lidas.");
+            return View("Index", model);
+        }
+
+        var nivel = (match.IdNivel ?? 1).ToString();
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, match.Nombre ?? normalized),
+            new Claim("rut", match.IdOrganismo),
+            new Claim("nivel", nivel)
+        };
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal,
+            new AuthenticationProperties { IsPersistent = model.RememberMe });
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
+        return RedirectToAction(nameof(ReqView));   
        
+
+    }
+
+    // --- LOGOUT ---
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        // Como Index es la pantalla de login:
+        return RedirectToAction(nameof(Index));
+    }
+
+
+
+
+    // --- Vistas de requisitos (nivel 1 puede ver) ---
+    public IActionResult ReqView()   // sin parÃ¡metros
+    {
+        var nivel = User.FindFirst("nivel")?.Value ?? "1";
+        ViewBag.Nivel = nivel;
+        ViewBag.CanCrud = nivel == "2" || nivel == "3";
         return View();
     }
 
-    // Vista a mostrar después del login exitoso
-    public IActionResult ReqView()
-    {
-        return View(); // Asegúrate de tener Views/Home/ReqView.cshtml
-    }
-
-    // GET: Agregar requisito
+    // --- CRUD protegido (nivel 2 y 3) ---
+    [Authorize(Policy = "Nivel2Plus")]
     [HttpGet]
     public IActionResult AddReq()
     {
-        return View(); // Views/Home/AddRequirement.cshtml
+        return View("AddReq");
     }
 
-    // POST: crear manual
+    [Authorize(Policy = "Nivel2Plus")]
+    [HttpGet]
+    public IActionResult EditReq(int id)
+    {
+        // TODO: cargar el requisito y pasarlo a la vista
+        return View();
+    }
+
+    [Authorize(Policy = "Nivel2Plus")]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult DeleteReq(int id)
+    {
+        // TODO: eliminar requisito por id
+        return RedirectToAction(nameof(ReqView));
+    }
+
+    [Authorize(Policy = "Nivel2Plus")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult CreateRequirement(ReqInputVM vm)
     {
-        if (!ModelState.IsValid) return View("AddRequirement");
+        if (!ModelState.IsValid) return View("AddReq", vm);
         // TODO: guardar en DB
-        // vm.Titulo, vm.Descripcion, vm.Entidad, vm.Tipo, vm.Item
-        return RedirectToAction("ReqView");
+        return RedirectToAction(nameof(ReqView));
     }
 
-    // GET: buscar en BCN (cuando conectemos la API real)
+    [Authorize(Policy = "Nivel2Plus")]
     [HttpGet]
     public async Task<IActionResult> SearchBCN(string q)
     {
-        // TODO: llamar API BCN, mapear y devolver JSON [{titulo, entidad, tipo, codigo, item, descripcion}]
-        return Json(new object[] { });
+        // TODO: llamar API BCN, mapear y devolver JSON
+        return Json(Array.Empty<object>());
     }
 
-    // POST: importar desde BCN (con los hidden del formulario)
+    [Authorize(Policy = "Nivel2Plus")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult ImportFromBCN(ReqInputVM vm)
     {
-        // TODO: guardar en DB directamente lo traído de BCN
-        return RedirectToAction("ReqView");
+        // TODO: guardar en DB lo traÃ­do de BCN
+        return RedirectToAction(nameof(ReqView));
     }
 
-    // POST: subir PDF
+    [Authorize(Policy = "Nivel2Plus")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UploadDocument(IFormFile Archivo)
     {
         if (Archivo == null || Archivo.Length == 0)
-            return BadRequest("Archivo vacío.");
+            return BadRequest("Archivo vacÃ­o.");
 
-        // TODO: guardar temporal y procesar (OCR/LLM), poblar campos requeridos y guardar en DB
-        return RedirectToAction("ReqView");
+        // TODO: procesar archivo
+        return RedirectToAction(nameof(ReqView));
     }
 }

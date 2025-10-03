@@ -74,7 +74,7 @@
             }
 </style>
 
-<div class="container">
+
     <!-- Calendario -->
     <div class="calendar-box">
         <div class="calendar-content">
@@ -86,20 +86,47 @@
     </div>
 
     <!-- Login -->
-    <div class="login-box">
-        <div class="login-form">
-            <h3>Iniciar Sesión</h3>
-            <form method="post" asp-action="Login" asp-controller="Home">
-                @Html.AntiForgeryToken()
-                <input type="email" name="email" placeholder="Correo electrónico" required />
-                <input type="password" name="password" placeholder="Contraseña" required />
-                <button type="submit">Entrar</button>
-            </form>
+    <div class="login-form">
+        <h3>Iniciar Sesión</h3>
 
-            <p style="font-size: 0.85em;">¿No tienes cuenta? <a href="#">Regístrate</a></p>
-        </div>
+        @* Muestra errores de ModelState (RUT inválido / credenciales) *@
+        @Html.ValidationSummary(false, "", new { @class = "text-danger", style = "text-align:left" })
+
+        <form method="post" asp-action="Login" asp-controller="Home">
+            @Html.AntiForgeryToken()
+
+            @* Si vienes redirigido, preserva returnUrl *@
+            @if (Context.Request.Query.ContainsKey("returnUrl"))
+            {
+                <input type="hidden" name="returnUrl" value="@Context.Request.Query["returnUrl"]" />
+            }
+
+            <input type="text" name="Rut"
+                   placeholder="RUT sin puntos ni guion (ej: 12345678K)"
+                   autocomplete="username"
+                   inputmode="text"
+                   pattern="^[0-9]+[0-9Kk]$"
+                   required />
+
+
+
+            <input type="password"
+                   name="Password"
+                   placeholder="Contraseña"
+                   autocomplete="current-password"
+                   required />
+
+            <label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+                <input type="checkbox" name="RememberMe" />
+                Recordarme
+            </label>
+
+            <button type="submit">Entrar</button>
+        </form>
+
+        <p style="font-size: 0.85em;">¿Problemas con el ingreso? Contácta al administrador</p>
     </div>
-</div>
+
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
@@ -153,4 +180,35 @@
             calendar.render();
         });
     </script>
+
+        <script>
+            // Normaliza al enviar y al salir del campo: 12345678-K (sin puntos, con guion, DV en mayúscula)
+            (function () {
+                const form = document.querySelector('form[asp-action="Login"][asp-controller="Home"]');
+                if (!form) return;
+
+                function normalizeRut(v) {
+                    if (!v) return v;
+                    const raw = v.replace(/[^0-9kK]/g, '');
+                    if (raw.length < 2) return v;
+                    const cuerpo = raw.slice(0, -1);
+                    const dv = raw.slice(-1).toUpperCase();
+                    return `${cuerpo}-${dv}`;
+                }
+
+                const rutInput = form.querySelector('input[name="Rut"]');
+                if (rutInput) {
+                    rutInput.addEventListener('blur', () => {
+                        rutInput.value = normalizeRut(rutInput.value);
+                    });
+                }
+
+                form.addEventListener('submit', () => {
+                    if (rutInput) rutInput.value = normalizeRut(rutInput.value);
+                });
+            })();
+        </script>
+
+        <partial name="_ValidationScriptsPartial" />
+
 }

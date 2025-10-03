@@ -151,7 +151,7 @@
     <!-- MANUAL -->
     <div id="pane-manual" class="card">
         <div class="section-title">
-            <span>📄</span><h3>Información General</h3>
+           <h3>Información General</h3>
         </div>
         <div class="hint">Completa todos los campos requeridos.</div>
 
@@ -167,6 +167,11 @@
                     <input type="text" name="Entidad" placeholder="Ej: Ministerio Secretaría General de la Presidencia / BCN" required />
                 </div>
 
+                <div style="grid-column:1/-1">
+                    <label>Descripción *</label>
+                    <textarea name="Descripcion" placeholder="Describe el requisito, alcance y objetivos..." required></textarea>
+                </div>
+
                 <div>
                     <label>Tipo de requisito *</label>
                     <select name="Tipo" required>
@@ -175,6 +180,8 @@
                         <option>Norma</option>
                         <option>Regulación</option>
                         <option>Decreto</option>
+                        <option>Otro</option>
+                       
                     </select>
                 </div>
                 <div>
@@ -182,10 +189,7 @@
                     <input type="text" name="Item" placeholder="Ej: Art. 5 — Requisitos de accesibilidad" required />
                 </div>
 
-                <div style="grid-column:1/-1">
-                    <label>Descripción *</label>
-                    <textarea name="Descripcion" placeholder="Describe el requisito, alcance y objetivos..." required></textarea>
-                </div>
+               
             </div>
 
             <div style="display:flex;gap:8px;margin-top:14px;">
