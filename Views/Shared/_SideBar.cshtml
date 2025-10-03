@@ -4,12 +4,17 @@
     Func<string, string, string> active = (a, c) =>
         string.Equals(controller, c, System.StringComparison.OrdinalIgnoreCase)
         && string.Equals(action, a, System.StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var canCrud = User.HasClaim("nivel", "2") || User.HasClaim("nivel", "3");
 }
 <aside class="sidebar">
     <div class="brand">ReqSaaS <small>Plataforma de Requisitos</small></div>
     <nav class="nav">
         <a class="@active("ReqView", "Home")" asp-controller="Home" asp-action="ReqView">📊 Resumen</a>
-        <a class="@active("AddReq", "Home")" asp-controller="Home" asp-action="AddReq">➕ Agregar requisito</a>
+        @if (canCrud)
+        {
+            <a class="@active("AddReq", "Home")" asp-controller="Home" asp-action="AddReq">➕ Agregar requisito</a>
+        }
+
     </nav>
     <hr />
     <div class="logout">

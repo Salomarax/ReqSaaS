@@ -1,6 +1,4 @@
-/* =========================================================
-   site.css — estilos globales de ReqSaaS
-   ========================================================= */
+
 
 /* 1) Base tipografía y tamaño */
 html {
@@ -23,10 +21,10 @@ html {
 }
 
 body {
-    margin: 0; /* antes tenía margin-bottom del template */
+    margin: 0;
     font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     color: #0f172a;
-    background-color: #ffffff; /* se sobreescribe por .content/.plain-shell */
+    background-color: #ffffff;
 }
 
 /* 2) Enfoques accesibles (respeta Bootstrap) */

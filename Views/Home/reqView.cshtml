@@ -1,6 +1,7 @@
 ﻿@{
     ViewData["Title"] = "Requisitos Normativos";
     ViewData["UseSideBar"] = true; 
+    var canCrud = User.HasClaim("nivel", "2") || User.HasClaim("nivel", "3");
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
@@ -158,11 +159,13 @@
                     </td>
                     <td class="actions">
                         <a title="Ver" href="@Url.Action("ReqView_Details", "Home")">👁️</a>
-                        <a title="Editar" href="#">✏️</a>
-                        <a title="Eliminar" href="#">🗑️</a>
+                        @if (canCrud)
+                        {
+                            <a title="Editar" href="#">✏️</a>
+                            <a title="Eliminar" href="#">🗑️</a>
+                        }
                     </td>
                 </tr>
-                <!-- más filas -->
             </tbody>
         </table>
     </div>
