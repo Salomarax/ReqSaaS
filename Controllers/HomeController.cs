@@ -26,11 +26,13 @@ public class HomeController : Controller
     }
 
     // --- HOME (pantalla de login) ---
-    // Debe ser anónimo para evitar loop con LoginPath = /Home/Index
+    // Anónimo para evitar loop con LoginPath = /Home/Index
     [AllowAnonymous]
     [HttpGet]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public IActionResult Index()
     {
+        // Siempre muestra el formulario de login (no redirige aunque haya cookie)
         return View(new LoginVM());
     }
 
@@ -107,6 +109,7 @@ public class HomeController : Controller
     // --- LOGIN (GET) ---
     [AllowAnonymous]
     [HttpGet]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public IActionResult Login(string? returnUrl = null)
     {
         ViewData["ReturnUrl"] = returnUrl;
@@ -118,52 +121,59 @@ public class HomeController : Controller
     [AllowAnonymous]
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Login(LoginVM model, string? returnUrl = null)
     {
+        // Validación básica del modelo (requiere campos)
         if (!ModelState.IsValid)
+        {
+            // Mensaje genérico (no revelar qué falló)
+            ModelState.AddModelError(string.Empty, "Credenciales inválidas.");
+            model.Password = string.Empty;
             return View("Index", model);
+        }
 
+        // Normaliza RUT; si falla, tratamos como credenciales inválidas
         var normalized = RutUtils.Normalize(model.Rut);
-        if (normalized == null)
-        {
-            ModelState.AddModelError(nameof(model.Rut), "RUT o DV inválido.");
-            return View("Index", model);
-        }
 
-        var candidatos = await _db.Credenciales
-            .AsNoTracking()
-            .Where(c => c.IdOrganismo == normalized)
-            .ToListAsync();
+        // Recupera candidatos solo si el RUT se pudo normalizar; si no, usa lista vacía
+        var candidatos = normalized == null
+            ? new List<Credencial>()
+            : await _db.Credenciales
+                .AsNoTracking()
+                .Where(c => c.IdOrganismo == normalized)
+                .ToListAsync();
 
-        if (candidatos.Count == 0)
-        {
-            ModelState.AddModelError(string.Empty, $"Credenciales inválidas. (RUT buscado: {normalized})");
-            return View("Index", model);
-        }
-
+        // Busca coincidencia de contraseña (si no hay candidatos, nunca entra al foreach)
         Credencial? match = null;
         foreach (var c in candidatos)
         {
             if (!string.IsNullOrWhiteSpace(c.ClaveHash) &&
                 BCrypt.Net.BCrypt.Verify(model.Password, c.ClaveHash))
             {
-                match = c; break;
+                match = c;
+                break;
             }
         }
 
+        // Si no hubo match → mensaje genérico (no diferenciamos si falló RUT o clave)
         if (match == null)
         {
+            // Pequeño retraso uniforme para evitar pistas temporales
+            await Task.Delay(250);
             ModelState.AddModelError(string.Empty, "Credenciales inválidas.");
+            model.Password = string.Empty;
             return View("Index", model);
         }
 
+        // ===== Autenticación exitosa =====
         var nivel = (match.IdNivel ?? 1).ToString();
         var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, match.Nombre ?? normalized),
-            new Claim("rut", match.IdOrganismo),
-            new Claim("nivel", nivel)
-        };
+    {
+        new Claim(ClaimTypes.Name, match.Nombre ?? (normalized ?? model.Rut ?? string.Empty)),
+        new Claim("rut", match.IdOrganismo),
+        new Claim("nivel", nivel)
+    };
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
@@ -171,30 +181,40 @@ public class HomeController : Controller
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             principal,
-            new AuthenticationProperties { IsPersistent = model.RememberMe });
+            new AuthenticationProperties
+            {
+                IsPersistent = model.RememberMe,
+                AllowRefresh = true
+            });
 
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
 
-        return RedirectToAction(nameof(ReqView));   
-       
-
+        return RedirectToAction(nameof(ReqView));
     }
 
-    // --- LOGOUT ---
+
+    // --- LOGOUT (POST con antiforgery; evita CSRF y el botón atrás) ---
     [AllowAnonymous]
-    [HttpGet]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        // Como Index es la pantalla de login:
+
+        // Refuerzo anti-caché inmediato
+        Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0";
+        Response.Headers["Pragma"] = "no-cache";
+        Response.Headers["Expires"] = "0";
+
+        // Index es la pantalla de login
         return RedirectToAction(nameof(Index));
     }
 
-
-
-
     // --- Vistas de requisitos (nivel 1 puede ver) ---
+    [HttpGet]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public IActionResult ReqView()   // sin parámetros
     {
         var nivel = User.FindFirst("nivel")?.Value ?? "1";
@@ -206,6 +226,7 @@ public class HomeController : Controller
     // --- CRUD protegido (nivel 2 y 3) ---
     [Authorize(Policy = "Nivel2Plus")]
     [HttpGet]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public IActionResult AddReq()
     {
         return View("AddReq");
@@ -213,6 +234,7 @@ public class HomeController : Controller
 
     [Authorize(Policy = "Nivel2Plus")]
     [HttpGet]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public IActionResult EditReq(int id)
     {
         // TODO: cargar el requisito y pasarlo a la vista
@@ -222,6 +244,7 @@ public class HomeController : Controller
     [Authorize(Policy = "Nivel2Plus")]
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public IActionResult DeleteReq(int id)
     {
         // TODO: eliminar requisito por id
@@ -231,6 +254,7 @@ public class HomeController : Controller
     [Authorize(Policy = "Nivel2Plus")]
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public IActionResult CreateRequirement(ReqInputVM vm)
     {
         if (!ModelState.IsValid) return View("AddReq", vm);

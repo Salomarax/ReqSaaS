@@ -14,10 +14,16 @@
         {
             <a class="@active("AddReq", "Home")" asp-controller="Home" asp-action="AddReq">➕ Agregar requisito</a>
         }
-
     </nav>
     <hr />
-    <div class="logout">
-        <a asp-controller="Home" asp-action="Index">📕 Cerrar sesión</a>
-    </div>
+
+    @if (User?.Identity?.IsAuthenticated == true)
+    {
+        <div class="logout">
+            <form asp-controller="Home" asp-action="Logout" method="post" class="inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-link">📕 Cerrar sesión</button>
+            </form>
+        </div>
+    }
 </aside>

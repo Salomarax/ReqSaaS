@@ -74,7 +74,7 @@
             }
 </style>
 
-
+<div class="container">
     <!-- Calendario -->
     <div class="calendar-box">
         <div class="calendar-content">
@@ -86,46 +86,46 @@
     </div>
 
     <!-- Login -->
-    <div class="login-form">
-        <h3>Iniciar Sesión</h3>
+    <div class="login-box">
+        <div class="login-form">
+            <h3>Iniciar Sesión</h3>
 
-        @* Muestra errores de ModelState (RUT inválido / credenciales) *@
-        @Html.ValidationSummary(false, "", new { @class = "text-danger", style = "text-align:left" })
+            @Html.ValidationSummary(false, "", new { @class = "text-danger", style = "text-align:left" })
 
-        <form method="post" asp-action="Login" asp-controller="Home">
-            @Html.AntiForgeryToken()
+            <form method="post" asp-action="Login" asp-controller="Home">
+                @Html.AntiForgeryToken()
 
-            @* Si vienes redirigido, preserva returnUrl *@
-            @if (Context.Request.Query.ContainsKey("returnUrl"))
-            {
-                <input type="hidden" name="returnUrl" value="@Context.Request.Query["returnUrl"]" />
-            }
+                @if (Context.Request.Query.ContainsKey("returnUrl"))
+                {
+                    <input type="hidden" name="returnUrl" value="@Context.Request.Query["returnUrl"]" />
+                }
 
-            <input type="text" name="Rut"
-                   placeholder="RUT sin puntos ni guion (ej: 12345678K)"
-                   autocomplete="username"
-                   inputmode="text"
-                   pattern="^[0-9]+[0-9Kk]$"
-                   required />
+                <input type="text" name="Rut"
+                       placeholder="RUT sin puntos ni guion (ej: 12345678K)"
+                       autocomplete="username"
+                       inputmode="text"
+                       pattern="^[0-9]+[0-9Kk]$"
+                       required />
 
+                <input type="password"
+                       name="Password"
+                       placeholder="Contraseña"
+                       autocomplete="current-password"
+                       required />
 
+                <label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+                    <input type="checkbox" name="RememberMe" />
+                    Recordarme
+                </label>
 
-            <input type="password"
-                   name="Password"
-                   placeholder="Contraseña"
-                   autocomplete="current-password"
-                   required />
+                <button type="submit">Entrar</button>
+            </form>
 
-            <label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
-                <input type="checkbox" name="RememberMe" />
-                Recordarme
-            </label>
-
-            <button type="submit">Entrar</button>
-        </form>
-
-        <p style="font-size: 0.85em;">¿Problemas con el ingreso? Contácta al administrador</p>
+            <p style="font-size: 0.85em;">¿Problemas con el ingreso? Contácta al administrador</p>
+        </div>
     </div>
+</div>
+
 
 
 @section Scripts {
