@@ -1,6 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Requisitos Normativos";
-    ViewData["UseSideBar"] = true; 
+    ViewData["UseSideBar"] = true;
     var canCrud = User.HasClaim("nivel", "2") || User.HasClaim("nivel", "3");
 }
 
@@ -99,6 +99,11 @@
         color: #166534;
     }
 
+    .badge-gray {
+        background: #e5e7eb;
+        color: #374151;
+    }
+
     .progress {
         background: #e5e7eb;
         border-radius: 10px;
@@ -115,10 +120,19 @@
             height: 100%;
         }
 
+    .muted {
+        color: #6b7280;
+    }
+
     .actions a {
         text-decoration: none;
         margin-right: 10px;
         font-size: 18px;
+    }
+
+    .center {
+        text-align: center;
+        color: #64748b;
     }
 </style>
 
@@ -129,10 +143,11 @@
     </div>
 
     <div class="filters">
-        <input type="text" placeholder="Buscar por número, título o descripción…" />
-        <select><option>Todas las categorías</option></select>
-        <select><option>Todas las prioridades</option></select>
-        <button>Filtrar</button>
+        <input id="flt-text" type="text" placeholder="Buscar por título o entidad…" />
+        <select id="flt-tipo">
+            <option value="">Todos los tipos</option>
+        </select>
+        <button type="button" id="btn-filtrar">Filtrar</button>
     </div>
 
     <div class="table-wrapper">
@@ -141,32 +156,144 @@
                 <tr>
                     <th>N°</th>
                     <th>Requisito</th>
-                    <th>Categoría</th>
+                    <th>Tipo</th>
                     <th>Estado</th>
                     <th>Cumplimiento</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td><span class="badge badge-purple">REQ-001</span></td>
-                    <td>Ley Marco de Ciberseguridad (Ley Nº 21.663)</td>
-                    <td><span class="badge badge-blue">Seguridad de Información</span></td>
-                    <td><span class="badge badge-green">En cumplimiento</span></td>
-                    <td>
-                        <span class="progress"><div style="width:75%"></div></span>
-                        <small>75% — 6 de 8 artículos</small>
-                    </td>
-                    <td class="actions">
-                        <a title="Ver" href="@Url.Action("ReqView_Details", "Home")">👁️</a>
-                        @if (canCrud)
-                        {
-                            <a title="Editar" href="#">✏️</a>
-                            <a title="Eliminar" href="#">🗑️</a>
-                        }
-                    </td>
-                </tr>
+            <tbody id="req-rows">
+                <tr><td colspan="6" class="center">Cargando…</td></tr>
             </tbody>
         </table>
     </div>
 </div>
+@section Scripts {
+    <script>
+        (() => {
+          const urlResumen = '@Url.Action("RequisitosResumen", "Home")';
+          const urlTipos   = '@Url.Action("Tipos", "Home")';
+
+          const $rows = document.getElementById('req-rows');
+          const $txt  = document.getElementById('flt-text');
+          const $tipo = document.getElementById('flt-tipo');
+          const $btn  = document.getElementById('btn-filtrar');
+
+          let data = [];
+          let tiposMap = new Map(); // id -> nombre
+
+          const get = (o, keys, def=null) => {
+            for (const k of keys) if (o != null && o[k] !== undefined && o[k] !== null) return o[k];
+            return def;
+          };
+
+          const estadoBadge = (pct) => pct>=100 ? `<span class="badge badge-green">Cumplido</span>`
+                                 : pct>0 ? `<span class="badge badge-blue">En cumplimiento</span>`
+                                 : `<span class="badge badge-gray">Pendiente</span>`;
+          const fmtNro = id => "REQ-" + String(id ?? '').padStart(3,'0');
+          const tipoNombre = (id) => tiposMap.get(Number(id)) || '—';
+
+          function render(list){
+            if (!Array.isArray(list) || list.length===0){
+              $rows.innerHTML = `<tr><td colspan="6" class="center">No hay requisitos para mostrar.</td></tr>`;
+              return;
+            }
+
+            $rows.innerHTML = list.map(r => {
+              // lee ambas variantes: PascalCase y camelCase
+              const id        = get(r, ['IdReq','idReq','id'], '');
+              const titulo    = get(r, ['Titulo','titulo'], '');
+              const entidad   = get(r, ['Entidad','entidad'], '—');
+              const idTipo    = get(r, ['IdTipo','idTipo'], null);
+              const total     = get(r, ['Total','total'], 0);
+              const ok        = get(r, ['Cumplidos','cumplidos'], 0);
+              const porcentaje= Math.max(0, Math.min(100, Math.round(get(r, ['Porcentaje','porcentaje'], 0))));
+              const bcn       = get(r, ['NormaIDBCN','normaIDBCN','normaIdBcn'], '—');
+
+              return `
+                <tr>
+                  <td><span class="badge badge-purple">${fmtNro(id)}</span></td>
+                  <td>
+                    <div style="font-weight:600;color:#111827">${titulo}</div>
+                    <div class="muted">Entidad: ${entidad} · BCN ${bcn}</div>
+                  </td>
+                  <td><span class="pill">${tipoNombre(idTipo)}</span></td>
+                  <td>${estadoBadge(porcentaje)}</td>
+                  <td>
+                    <span class="progress"><div style="width:${porcentaje}%"></div></span>
+                    <small>${porcentaje}% — ${ok} de ${total} artículos</small>
+                  </td>
+                  <td class="actions">
+                    <a title="Ver" href="#">👁️</a>
+                    @if (User.HasClaim("nivel", "2") || User.HasClaim("nivel", "3"))
+                    {
+                              <text><a title="Editar" href="#">✏️</a><a title="Eliminar" href="#">🗑️</a></text>
+                    }
+                  </td>
+                </tr>`;
+            }).join('');
+          }
+
+          function applyFilter(){
+            const q = ($txt.value||'').toLowerCase().trim();
+            const t = $tipo.value;
+            let list = data.slice();
+
+            if (q) list = list.filter(r =>
+              (get(r,['Titulo','titulo'],'').toLowerCase().includes(q)) ||
+              (get(r,['Entidad','entidad'],'').toLowerCase().includes(q))
+            );
+            if (t) list = list.filter(r => String(get(r,['IdTipo','idTipo'], '')) === t);
+
+            render(list);
+          }
+
+          async function loadTipos(){
+            try{
+              const res = await fetch(urlTipos, { cache:'no-store', credentials:'same-origin' });
+              if (!res.ok) throw new Error('HTTP ' + res.status);
+              const lista = await res.json(); // [{id, nombre}]
+              tiposMap = new Map((lista || []).map(t => [Number(t.id), t.nombre]));
+              $tipo.innerHTML = `<option value="">Todos los tipos</option>` +
+                (lista || []).map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+            }catch{
+              // si falla, dejamos solo "Todos los tipos" y el render mostrará "—"
+            }
+          }
+
+          async function loadResumen(){
+            try{
+              const res = await fetch(urlResumen, { cache:'no-store', credentials:'same-origin' });
+              if(!res.ok){
+                const txt = await res.text();
+                try{ const j = JSON.parse(txt);
+                     const msg = j.detail || j.error || txt;
+                     $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Error al cargar el resumen: ${msg}</td></tr>`;
+                }catch{
+                     $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Error al cargar el resumen: HTTP ${res.status}</td></tr>`;
+                }
+                return;
+              }
+              const json = await res.json();
+              if(!Array.isArray(json)){
+                $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Formato inesperado del resumen.</td></tr>`;
+                return;
+              }
+              data = json;
+              render(data);
+            }catch(e){
+              console.error(e);
+              $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Error al cargar el resumen (ver consola).</td></tr>`;
+            }
+          }
+
+          $btn.addEventListener('click', applyFilter);
+
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => { loadTipos(); loadResumen(); });
+          } else {
+            loadTipos(); loadResumen();
+          }
+        })();
+    </script>
+}

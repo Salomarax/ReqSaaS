@@ -9,7 +9,7 @@
 <aside class="sidebar">
     <div class="brand">ReqSaaS <small>Plataforma de Requisitos</small></div>
     <nav class="nav">
-        <a class="@active("ReqView", "Home")" asp-controller="Home" asp-action="ReqView">📊 Resumen</a>
+        <a class="@active("reqView", "Home")" asp-controller="Home" asp-action="reqView">📊 Resumen</a>
         @if (canCrud)
         {
             <a class="@active("AddReq", "Home")" asp-controller="Home" asp-action="AddReq">➕ Agregar requisito</a>

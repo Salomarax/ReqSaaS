@@ -4,16 +4,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using ReqSaaS_1.Data;
 using ReqSaaS_1.Data.Entities;
 using ReqSaaS_1.Models;
 using ReqSaaS_1.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
-using System.Threading.Tasks;
+using System.Threading;
 
 [Authorize]
 public class HomeController : Controller
@@ -26,17 +24,12 @@ public class HomeController : Controller
     }
 
     // --- HOME (pantalla de login) ---
-    // Anónimo para evitar loop con LoginPath = /Home/Index
     [AllowAnonymous]
     [HttpGet]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-    public IActionResult Index()
-    {
-        // Siempre muestra el formulario de login (no redirige aunque haya cookie)
-        return View(new LoginVM());
-    }
+    public IActionResult Index() => View(new LoginVM());
 
-    // --- FERIADOS (anónimo; robusto ante JSON raro/fallas) ---
+    // --- FERIADOS ---
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetFeriados()
@@ -61,6 +54,7 @@ public class HomeController : Controller
             static bool B(JsonElement el, params string[] names)
             {
                 foreach (var n in names)
+                {
                     if (el.TryGetProperty(n, out var v))
                     {
                         if (v.ValueKind == JsonValueKind.True) return true;
@@ -68,6 +62,7 @@ public class HomeController : Controller
                         if (v.ValueKind == JsonValueKind.String && bool.TryParse(v.GetString(), out var b)) return b;
                         if (v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i)) return i != 0;
                     }
+                }
                 return false;
             }
             static string D(string s)
@@ -80,9 +75,11 @@ public class HomeController : Controller
             IEnumerable<JsonElement> rows = Array.Empty<JsonElement>();
             if (root.ValueKind == JsonValueKind.Array) rows = root.EnumerateArray();
             else if (root.ValueKind == JsonValueKind.Object)
+            {
                 foreach (var k in new[] { "feriados", "holidays", "data", "items", "result", "results" })
                     if (root.TryGetProperty(k, out var arr) && arr.ValueKind == JsonValueKind.Array)
                     { rows = arr.EnumerateArray(); break; }
+            }
 
             var list = new List<object>();
             foreach (var el in rows)
@@ -106,45 +103,44 @@ public class HomeController : Controller
         }
     }
 
-    // --- LOGIN (GET) ---
+    // --- LOGIN (GET/POST) ---
     [AllowAnonymous]
     [HttpGet]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public IActionResult Login(string? returnUrl = null)
     {
         ViewData["ReturnUrl"] = returnUrl;
-        // Usamos Index.cshtml como vista de login
         return View("Index", new LoginVM());
     }
 
-    // --- LOGIN (POST) ---
     [AllowAnonymous]
     [HttpPost]
     [ValidateAntiForgeryToken]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Login(LoginVM model, string? returnUrl = null)
     {
-        // Validación básica del modelo (requiere campos)
         if (!ModelState.IsValid)
         {
-            // Mensaje genérico (no revelar qué falló)
             ModelState.AddModelError(string.Empty, "Credenciales inválidas.");
             model.Password = string.Empty;
             return View("Index", model);
         }
 
-        // Normaliza RUT; si falla, tratamos como credenciales inválidas
         var normalized = RutUtils.Normalize(model.Rut);
 
-        // Recupera candidatos solo si el RUT se pudo normalizar; si no, usa lista vacía
-        var candidatos = normalized == null
-            ? new List<Credencial>()
-            : await _db.Credenciales
-                .AsNoTracking()
-                .Where(c => c.IdOrganismo == normalized)
-                .ToListAsync();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            await Task.Delay(250);
+            ModelState.AddModelError(string.Empty, "Credenciales inválidas.");
+            model.Password = string.Empty;
+            return View("Index", model);
+        }
 
-        // Busca coincidencia de contraseña (si no hay candidatos, nunca entra al foreach)
+        var candidatos = await _db.Credenciales
+            .AsNoTracking()
+            .Where(c => c.IdOrganismo == normalized)
+            .ToListAsync();
+
         Credencial? match = null;
         foreach (var c in candidatos)
         {
@@ -156,31 +152,26 @@ public class HomeController : Controller
             }
         }
 
-        // Si no hubo match → mensaje genérico (no diferenciamos si falló RUT o clave)
         if (match == null)
         {
-            // Pequeño retraso uniforme para evitar pistas temporales
             await Task.Delay(250);
             ModelState.AddModelError(string.Empty, "Credenciales inválidas.");
             model.Password = string.Empty;
             return View("Index", model);
         }
 
-        // ===== Autenticación exitosa =====
         var nivel = (match.IdNivel ?? 1).ToString();
         var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.Name, match.Nombre ?? (normalized ?? model.Rut ?? string.Empty)),
-        new Claim("rut", match.IdOrganismo),
-        new Claim("nivel", nivel)
-    };
+        {
+            new Claim(ClaimTypes.Name, match.Nombre ?? normalized),
+            new Claim("rut", match.IdOrganismo),
+            new Claim("nivel", nivel)
+        };
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
-            principal,
+            new ClaimsPrincipal(identity),
             new AuthenticationProperties
             {
                 IsPersistent = model.RememberMe,
@@ -190,11 +181,16 @@ public class HomeController : Controller
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
 
-        return RedirectToAction(nameof(ReqView));
+        return RedirectToAction(nameof(reqView));
     }
 
+    [Authorize(Policy = "Nivel2Plus")]
+    [HttpGet("/Home/AddReq")] // ← ruta explícita; evita ambigüedades
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public IActionResult AddReq() => View("AddReq");
 
-    // --- LOGOUT (POST con antiforgery; evita CSRF y el botón atrás) ---
+
+    // --- LOGOUT ---
     [AllowAnonymous]
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -203,19 +199,17 @@ public class HomeController : Controller
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        // Refuerzo anti-caché inmediato
         Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0";
         Response.Headers["Pragma"] = "no-cache";
         Response.Headers["Expires"] = "0";
 
-        // Index es la pantalla de login
         return RedirectToAction(nameof(Index));
     }
 
-    // --- Vistas de requisitos (nivel 1 puede ver) ---
+    // --- Vista resumen ---
     [HttpGet]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-    public IActionResult ReqView()   // sin parámetros
+    public IActionResult reqView()
     {
         var nivel = User.FindFirst("nivel")?.Value ?? "1";
         ViewBag.Nivel = nivel;
@@ -223,71 +217,105 @@ public class HomeController : Controller
         return View();
     }
 
-    // --- CRUD protegido (nivel 2 y 3) ---
-    [Authorize(Policy = "Nivel2Plus")]
+    // --- Ping de sesión (debug rápido) ---
+    [HttpGet("ping")]
+    public IActionResult Ping()
+    {
+        var rut = User.FindFirst("rut")?.Value ?? "(sin rut)";
+        var nivel = User.FindFirst("nivel")?.Value ?? "(sin nivel)";
+        return Ok(new { ok = true, rut, nivel, now = DateTime.UtcNow });
+    }
+
+
     [HttpGet]
-    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-    public IActionResult AddReq()
+    [Produces("application/json")]
+    public async Task<IActionResult> RequisitosResumen(CancellationToken ct)
     {
-        return View("AddReq");
+        var idOrganismo = User.FindFirst("rut")?.Value ?? "";
+        try
+        {
+            // 1) Build query once to poder ver el SQL exacto
+            var qBase = _db.Requisitos
+                .Where(r => r.IdOrganismo == idOrganismo)
+                .Select(r => new
+                {
+                    r.IdReq,
+                    r.Titulo,
+                    r.Entidad,
+                    r.NormaIDBCN, // <-- debe mapear a columna "normaID_BCN"
+                    r.IdTipo
+                });
+
+            // 2) LOG: SQL generado por EF (mira la consola/Output)
+            var sql = qBase.ToQueryString();
+            Console.WriteLine("\n[RequisitosResumen] SQL generado por EF:\n" + sql + "\n");
+
+            var baseData = await qBase.ToListAsync(ct);
+
+            var qAgg = _db.DetalleEvaluaciones
+                .GroupBy(d => d.IdRequisito)
+                .Select(g => new { RequisitoId = g.Key, Total = g.Count(), Cumplidos = g.Count(x => x.Cumplimiento) });
+
+            Console.WriteLine("\n[RequisitosResumen] SQL agregados:\n" + qAgg.ToQueryString() + "\n");
+
+            var totales = await qAgg.ToListAsync(ct);
+            var map = totales.ToDictionary(x => x.RequisitoId, x => x);
+
+            var salida = baseData.Select(x =>
+            {
+                map.TryGetValue(x.IdReq, out var agg);
+                var total = agg?.Total ?? 0;
+                var ok = agg?.Cumplidos ?? 0;
+                var porcentaje = total == 0 ? 0 : Math.Round(100.0 * ok / total, 2);
+
+                return new
+                {
+                    IdReq = x.IdReq,
+                    Titulo = x.Titulo ?? "",
+                    Entidad = x.Entidad,
+                    NormaIDBCN = x.NormaIDBCN,   // si sale null, la vista mostrará "—"
+                    IdTipo = x.IdTipo,
+                    Total = total,
+                    Cumplidos = ok,
+                    Porcentaje = porcentaje
+                };
+            });
+
+            return Ok(salida);
+        }
+        catch (PostgresException pgex)
+        {
+            // Devuelve detalle claro al front y log completo en consola
+            Console.Error.WriteLine($"[RequisitosResumen][PG] {pgex.SqlState} {pgex.MessageText}\n{pgex}");
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                error = "Postgres error en el resumen.",
+                sqlstate = pgex.SqlState,
+                detail = pgex.MessageText
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[RequisitosResumen][EX] {ex.GetType().Name}: {ex.Message}\n{ex}");
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                error = "Fallo al construir el resumen.",
+                detail = ex.Message
+            });
+        }
     }
 
-    [Authorize(Policy = "Nivel2Plus")]
     [HttpGet]
-    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-    public IActionResult EditReq(int id)
+    [Produces("application/json")]
+    public async Task<IActionResult> Tipos(CancellationToken ct)
     {
-        // TODO: cargar el requisito y pasarlo a la vista
-        return View();
+        var tipos = await _db.Tipos
+            .OrderBy(t => t.Nombre)
+            .Select(t => new { id = t.IdTipo, nombre = t.Nombre })
+            .ToListAsync(ct);
+
+        return Ok(tipos);
     }
 
-    [Authorize(Policy = "Nivel2Plus")]
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-    public IActionResult DeleteReq(int id)
-    {
-        // TODO: eliminar requisito por id
-        return RedirectToAction(nameof(ReqView));
-    }
 
-    [Authorize(Policy = "Nivel2Plus")]
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-    public IActionResult CreateRequirement(ReqInputVM vm)
-    {
-        if (!ModelState.IsValid) return View("AddReq", vm);
-        // TODO: guardar en DB
-        return RedirectToAction(nameof(ReqView));
-    }
-
-    [Authorize(Policy = "Nivel2Plus")]
-    [HttpGet]
-    public async Task<IActionResult> SearchBCN(string q)
-    {
-        // TODO: llamar API BCN, mapear y devolver JSON
-        return Json(Array.Empty<object>());
-    }
-
-    [Authorize(Policy = "Nivel2Plus")]
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult ImportFromBCN(ReqInputVM vm)
-    {
-        // TODO: guardar en DB lo traído de BCN
-        return RedirectToAction(nameof(ReqView));
-    }
-
-    [Authorize(Policy = "Nivel2Plus")]
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UploadDocument(IFormFile Archivo)
-    {
-        if (Archivo == null || Archivo.Length == 0)
-            return BadRequest("Archivo vacío.");
-
-        // TODO: procesar archivo
-        return RedirectToAction(nameof(ReqView));
-    }
 }

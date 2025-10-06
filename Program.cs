@@ -2,10 +2,12 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ReqSaaS_1.Services.BCN;
 using ReqSaaS_1.Data;
 using System;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddScoped<ReqSaaS_1.Services.ISqlRequisitosService, ReqSaaS_1.Services.SqlRequisitosService>();
 
 // === MVC + filtro global para evitar caché en vistas (clave para que "Atrás" no muestre páginas privadas) ===
 builder.Services.AddControllersWithViews(options =>
@@ -17,13 +19,29 @@ builder.Services.AddControllersWithViews(options =>
     });
 });
 
-// === EF Core + PostgreSQL (usa ConnectionStrings:DefaultConnection) ===
+builder.Services.AddAntiforgery(o => o.HeaderName = "RequestVerificationToken");
+
+// === EF Core + PostgreSQL conexión a BBDD ===
 var cs = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Si está vacío aquí, no llegó desde appsettings, User Secrets ni variables de entorno.
 if (string.IsNullOrWhiteSpace(cs))
-    throw new InvalidOperationException("Falta ConnectionStrings:DefaultConnection en appsettings.json");
+    throw new InvalidOperationException(
+        "No se encontró ConnectionStrings:DefaultConnection en la configuración. " +
+        "Defínelo con User Secrets (en Development) o con la variable de entorno " +
+        "ConnectionStrings__DefaultConnection (en Producción).");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(cs));
+{
+    options.UseNpgsql(cs);
+
+    if (builder.Environment.IsDevelopment())
+    {
+        // Útil solo para depurar en desarrollo
+        options.EnableDetailedErrors();
+        options.EnableSensitiveDataLogging();
+    }
+});
 
 // === Cookies de autenticación (Opción A: vida corta y sin sliding) ===
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -51,6 +69,13 @@ builder.Services.AddAuthorization(options =>
         p.RequireAssertion(ctx => ctx.User.HasClaim("nivel", "2") || ctx.User.HasClaim("nivel", "3")));
     options.AddPolicy("Nivel3Only", p => p.RequireClaim("nivel", "3"));
 });
+
+builder.Services.AddHttpClient<IBCNClient, BCNClient>(http =>
+{
+    http.BaseAddress = new Uri("https://www.leychile.cl/");
+    http.Timeout = TimeSpan.FromSeconds(15);
+});
+
 
 var app = builder.Build();
 
@@ -87,9 +112,11 @@ app.Use(async (ctx, next) =>
     await next();
 });
 
+app.MapControllers(); // habilita /import/bcn/search y /import/bcn/requisitos/{id}
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
 
 app.Run();

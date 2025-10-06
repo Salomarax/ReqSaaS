@@ -11,7 +11,7 @@ namespace ReqSaaS_1.Data.Entities
         public int IdCredencial { get; set; }
 
         [Column("ID_organismo")]
-        public string IdOrganismo { get; set; } = null!;   // <- requerido en BD
+        public string IdOrganismo { get; set; } = null!;   
 
         [Column("Clave_hash")]
         public string ClaveHash { get; set; } = null!;     // <- requerido en BD
