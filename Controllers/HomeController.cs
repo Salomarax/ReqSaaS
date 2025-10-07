@@ -32,75 +32,11 @@ public class HomeController : Controller
     // --- FERIADOS ---
     [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> GetFeriados()
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public IActionResult GetFeriados()
     {
-        const string url = "https://api.boostr.cl/holidays.json";
-
-        try
-        {
-            using var http = new HttpClient();
-            var json = await http.GetStringAsync(url);
-
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            static string? S(JsonElement el, params string[] names)
-            {
-                foreach (var n in names)
-                    if (el.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.String)
-                        return v.GetString();
-                return null;
-            }
-            static bool B(JsonElement el, params string[] names)
-            {
-                foreach (var n in names)
-                {
-                    if (el.TryGetProperty(n, out var v))
-                    {
-                        if (v.ValueKind == JsonValueKind.True) return true;
-                        if (v.ValueKind == JsonValueKind.False) return false;
-                        if (v.ValueKind == JsonValueKind.String && bool.TryParse(v.GetString(), out var b)) return b;
-                        if (v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i)) return i != 0;
-                    }
-                }
-                return false;
-            }
-            static string D(string s)
-            {
-                if (DateTime.TryParse(s, out var dt)) return dt.ToString("yyyy-MM-dd");
-                s = s.Replace('/', '-');
-                return s.Length >= 10 ? s[..10] : s;
-            }
-
-            IEnumerable<JsonElement> rows = Array.Empty<JsonElement>();
-            if (root.ValueKind == JsonValueKind.Array) rows = root.EnumerateArray();
-            else if (root.ValueKind == JsonValueKind.Object)
-            {
-                foreach (var k in new[] { "feriados", "holidays", "data", "items", "result", "results" })
-                    if (root.TryGetProperty(k, out var arr) && arr.ValueKind == JsonValueKind.Array)
-                    { rows = arr.EnumerateArray(); break; }
-            }
-
-            var list = new List<object>();
-            foreach (var el in rows)
-            {
-                var fecha = S(el, "fecha", "date", "day", "fecha_iso");
-                if (fecha == null && el.TryGetProperty("date", out var dobj) && dobj.ValueKind == JsonValueKind.Object)
-                    fecha = S(dobj, "iso", "fecha");
-
-                var nombre = S(el, "nombre", "title", "name", "descripcion", "description");
-                var irr = B(el, "irrenunciable", "mandatory", "isHoliday", "obligatorio");
-
-                if (!string.IsNullOrWhiteSpace(fecha) && !string.IsNullOrWhiteSpace(nombre))
-                    list.Add(new { Fecha = D(fecha), Nombre = nombre, Irrenunciable = irr });
-            }
-
-            return Json(list);
-        }
-        catch
-        {
-            return Json(Array.Empty<object>());
-        }
+        // Redirige al navegador a la API pública (evita el 403 desde tu servidor)
+        return Redirect("https://api.boostr.cl/holidays.json");
     }
 
     // --- LOGIN (GET/POST) ---

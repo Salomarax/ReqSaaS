@@ -8,18 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 
 <style>
-    body {
-        margin: 0;
-        font-family: 'Inter',sans-serif;
-        background: #f7faf9;
-        min-height: 100vh
-    }
-
-    .wrap {
-        max-width: 1100px;
-        margin: 28px auto;
-        padding: 0 16px
-    }
+   
 
     .tabs {
         display: flex;
@@ -152,8 +141,10 @@
         <button class="tab" data-pane="pdf">Cargar documento</button>
     </div>
 
+
     <!-- MANUAL -->
-    <div id="pane-manual" class="card">
+    <div class="page page--fluid">
+        <div id="pane-manual" class="card ">
         <div class="section-title">
             <h3>Información General</h3>
         </div>
@@ -199,8 +190,11 @@
             </div>
         </form>
     </div>
+    </div>
+
 
     <!-- BCN -->
+    <div class="page page--fluid">
     <div id="pane-bcn" class="card" style="display:none">
         <div class="section-title">
             <span>🏛️</span><h3>Importar desde BCN</h3>
@@ -237,7 +231,9 @@
             </table>
         </div>
     </div>
+    </div>
 
+    <div class="page page--fluid">
     <!-- PDF -->
     <div id="pane-pdf" class="card" style="display:none">
         <div class="section-title">
@@ -260,6 +256,7 @@
         </form>
         <p class="hint" style="margin-top:10px">⚠️ Por ahora solo sube y guarda; la extracción la conectamos después.</p>
     </div>
+</div>
 </div>
 
 @section Scripts {

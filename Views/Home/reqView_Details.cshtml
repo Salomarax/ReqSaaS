@@ -107,11 +107,12 @@
     }
 </style>
 
-<div class="page">
+<div class="page page--fluid">
+
     <div class="card header">
         <div class="top-actions">
             <h2>@Model.Titulo</h2>
-            <a href="@Url.Action("reqView", "Home")" class="btn-outline-green">← Volver al listado</a>
+            <a href="@Url.Action("reqView", "Home")" class="btn-outline-green">← Volver</a>
         </div>
         <div class="muted">
             <span class="pill">@((Model.TipoNombre ?? "—"))</span>

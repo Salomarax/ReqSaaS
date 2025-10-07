@@ -1,6 +1,6 @@
-
-
-/* 1) Base tipografía y tamaño */
+/* =========================================================
+   1) Base tipografía y tamaño
+   ========================================================= */
 html {
     font-size: 14px;
 }
@@ -27,7 +27,7 @@ body {
     background-color: #ffffff;
 }
 
-/* 2) Enfoques accesibles (respeta Bootstrap) */
+/* Enfoques accesibles (respeta Bootstrap) */
 .btn:focus,
 .btn:active:focus,
 .btn-link.nav-link:focus,
@@ -37,10 +37,8 @@ body {
 }
 
 /* =========================================================
-   3) Layouts
+   2) Layout: app con sidebar y modo plano
    ========================================================= */
-
-/* --- Modo App con Sidebar --- */
 .app-shell {
     display: flex;
     min-height: 100vh;
@@ -49,7 +47,8 @@ body {
 }
 
 .sidebar {
-    width: 260px;
+    width: 160px;
+    flex: 0 0 160px;
     background: #2ecc40;
     color: #fff;
     display: flex;
@@ -58,7 +57,6 @@ body {
     border-top-left-radius: 12px;
     border-bottom-left-radius: 12px;
     box-shadow: 3px 0 10px rgba(0,0,0,.15);
-    flex: 0 0 260px;
 }
 
 .brand {
@@ -115,7 +113,6 @@ body {
     border-radius: 12px;
 }
 
-/* Área de contenido de la app */
 .content {
     flex: 1;
     background: #f4f6f9;
@@ -127,10 +124,10 @@ body {
     min-width: 0;
 }
 
-/* --- Modo Plano (login / landing) --- */
+/* Modo plano (login / landing) */
 .plain-shell {
     min-height: 100vh;
-    background: linear-gradient(180deg,#a8e063 0%, #56ab2f 100%); /* fondo verde */
+    background: linear-gradient(180deg,#a8e063 0%, #56ab2f 100%);
 }
 
 .plain-content {
@@ -140,7 +137,7 @@ body {
     justify-content: center;
 }
 
-/* Responsive para sidebar (opcional) */
+/* Responsive sidebar */
 @media (max-width: 992px) {
     .app-shell {
         flex-direction: column;
@@ -161,16 +158,35 @@ body {
 }
 
 /* =========================================================
-   4) Componentes comunes (reutilizables en todas las vistas)
+   3) Componentes comunes (reutilizables en todas las vistas)
    ========================================================= */
 
-/* Contenedor de página */
-
+/* Contenedor de página
+   — Nota: usamos selectores más específicos que .page “a secas”
+     para GANARLE a las reglas embebidas en las vistas. */
 .page {
-    max-width: 1300px;
+    width: 100%;
     margin: 0 auto;
-    padding: 16px 18px; /* <- esta es la diferencia clave */
+    padding: 16px clamp(12px, 2vw, 28px);
+    max-width: none; /* sin límite */
 }
+
+/* Fuerza el ancho fluido dentro del layout con sidebar.
+   El !important es intencional: pisa los <style> de las vistas. */
+.content > .page {
+    width: 100% !important;
+    max-width: min(96vw - 2rem, 1400px) !important; /* responsivo + tope cómodo */
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+    /* Asegura que “las tarjetas/tablas grandes” ocupen todo el ancho disponible */
+    .content > .page > .card,
+    .content > .page > .card-lg,
+    .content > .page > .table-wrap,
+    .content > .page > .table-wrapper {
+        width: 100% !important;
+    }
 
 .page-header {
     text-align: center;
@@ -209,9 +225,7 @@ body {
     margin-bottom: 16px;
 }
 
-    .filters input,
-    .filters select,
-    .filters button {
+    .filters input, .filters select, .filters button {
         padding: 10px;
         border-radius: 10px;
         border: 1px solid #e5e7eb;
@@ -238,16 +252,26 @@ body {
     box-shadow: 0 10px 24px rgba(0,0,0,.08);
 }
 
+/* Hace a las tablas “scrollables” en pantallas chicas sin romper ancho */
 .table-clean {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
+    display: block; /* clave */
+    overflow-x: auto; /* clave */
 }
+
+    .table-clean thead, .table-clean tbody, .table-clean tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
 
     .table-clean th, .table-clean td {
         padding: 12px 10px;
         border-bottom: 1px solid #eef2f7;
         text-align: left;
+        vertical-align: top;
     }
 
     .table-clean th {
@@ -329,7 +353,7 @@ body {
 /* Grid de estadísticas (cabeceras del Detalle) */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    grid-template-columns: repeat(4, minmax(180px,1fr));
     gap: 14px;
     margin-bottom: 16px;
 }
@@ -403,11 +427,10 @@ body {
     }
 
 /* =========================================================
-   5) Ajustes específicos ligeros
+   4) Ajustes específicos
    ========================================================= */
 
-/* FullCalendar: deja que el contenedor defina la altura.
-   (Se recomienda setear height desde JS con calendar options) */
+/* FullCalendar dentro de tarjetas */
 .fc .fc-scrollgrid, .fc .fc-scroller-harness {
     background: #fff;
     border-radius: 10px;
@@ -423,4 +446,45 @@ body {
         text-decoration: underline;
     }
 
+/* Breakpoints para “respirar” mejor en móviles */
+@media (max-width: 768px) {
+    .content {
+        padding: 12px;
+    }
 
+        .content > .page {
+            max-width: calc(100vw - 1rem) !important;
+        }
+
+    .page-header h2 {
+        font-size: 1.25rem;
+    }
+}
+/* --- Página fluida (sin tope) para que crezca con la pantalla/zoom --- */
+.page--fluid {
+    width: 100%; /* ocupa todo el ancho disponible del área .content */
+    max-width: none; /* sin límite superior */
+    margin: 0 auto;
+    padding: 16px clamp(12px, 2vw, 28px); /* padding responsivo agradable */
+}
+
+    /* Asegura que las “burbujas” internas realmente llenen el ancho */
+    .page--fluid .table-wrap,
+    .page--fluid .table-wrapper,
+    .page--fluid .card {
+        width: 100%;
+        max-width: none;
+    }
+
+/* ===== OVERRIDE: páginas fluidas sin tope de ancho ===== */
+.content > .page.page--fluid {
+    max-width: none !important; /* quita el límite de 1400px */
+}
+
+    /* asegura que los bloques principales llenen el ancho disponible */
+    .content > .page.page--fluid > .card,
+    .content > .page.page--fluid > .table-wrap,
+    .content > .page.page--fluid > .table-wrapper {
+        width: 100% !important;
+        max-width: none;
+    }
