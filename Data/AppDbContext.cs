@@ -83,6 +83,13 @@ namespace ReqSaaS_1.Data
             });
 
             base.OnModelCreating(modelBuilder);
+
+            // Requisito 1..* DetalleEvaluacion  (CASCADE)
+            modelBuilder.Entity<DetalleEvaluacion>()
+                .HasOne(d => d.Requisito)
+                .WithMany(r => r.DetalleEvaluaciones)
+                .HasForeignKey(d => d.IdRequisito)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

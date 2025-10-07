@@ -1,76 +1,193 @@
-﻿@{
-    ViewData["Title"] = "Detalle de requisito";
-    ViewData["UseSideBar"] = true; // <- para que el layout pinte la barra lateral
+﻿@model ReqSaaS_1.Models.RequisitoDetalleVM
+@{
+    ViewData["Title"] = "Detalle del Requisito";
+    ViewData["UseSideBar"] = true;
+    bool readOnly = ViewBag.ReadOnly == true;
 }
 
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
+<style>
+    
+    .card {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(0,0,0,.06);
+        padding: 18px;
+    }
+
+    .header {
+        margin-bottom: 14px;
+    }
+
+        .header h2 {
+            margin: 0 0 6px;
+            color: #0f172a;
+        }
+
+    .muted {
+        color: #6b7280;
+    }
+
+    .pill {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #0f172a;
+        font-size: .85rem;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .95rem;
+    }
+
+    th, td {
+        padding: 10px;
+        border-bottom: 1px solid #eef2f7;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    th {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+    textarea {
+        width: 100%;
+        min-height: 68px;
+        resize: vertical;
+    }
+
+    input[type="text"] {
+        width: 100%;
+    }
+
+    .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .btn {
+        border: none;
+        background: #16a34a;
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+    }
+
+        .btn.gray {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+    .top-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .btn-outline-green {
+        border: 1px solid #16a34a;
+        color: #16a34a;
+        padding: 8px 10px;
+        border-radius: 10px;
+        text-decoration: none;
+    }
+
+    .item-detalle {
+        white-space: pre-wrap; /* conserva saltos de línea */
+        line-height: 1.35;
+    }
+</style>
+
 <div class="page">
-    <div class="page-header">
-        <h2>Requisitos Normativos con Estado de Cumplimiento</h2>
-        <p>Detalle del requisito y trazabilidad de evidencias</p>
-    </div>
-
-    <!-- Cabecera del requisito -->
-    <div class="stats-grid">
-        <div class="stat">
-            <div class="label">Nombre</div>
-            <div class="value">Ley Marco de Ciberseguridad (Ley N° 21.663)</div>
+    <div class="card header">
+        <div class="top-actions">
+            <h2>@Model.Titulo</h2>
+            <a href="@Url.Action("reqView", "Home")" class="btn-outline-green">← Volver al listado</a>
         </div>
-        <div class="stat">
-            <div class="label">Tipo</div>
-            <div class="value">Ley (Nacional)</div>
-        </div>
-        <div class="stat">
-            <div class="label">Año de Vigencia</div>
-            <div class="value">2024 - 2025</div>
-        </div>
-        <div class="stat">
-            <div class="label">Área o Rubro</div>
-            <div class="value">Ciberseguridad</div>
+        <div class="muted">
+            <span class="pill">@((Model.TipoNombre ?? "—"))</span>
+            &nbsp;|&nbsp; Entidad: @((Model.Entidad ?? "—"))
+            &nbsp;|&nbsp; BCN: @(Model.NormaIDBCN?.ToString() ?? "—")
         </div>
     </div>
 
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-bottom:12px;">
-        <a href="@Url.Action("reqView", "Home")" class="btn-outline-green">← Volver al listado</a>
-        <a href="#" class="btn-green">Editar requisito</a>
-    </div>
+    <div class="card">
+        @if (TempData["ok"] != null)
+        {
+            <div class="muted" style="margin-bottom:10px;color:#166534">✔ @TempData["ok"]</div>
+        }
 
-    <!-- Tabla de artículos -->
-    <div class="card card-lg">
-        <table class="table-clean">
-            <thead>
-                <tr>
-                    <th style="width:32%">Item</th>
-                    <th style="width:15%">Estado</th>
-                    <th style="width:38%">Forma de Cumplimiento</th>
-                    <th style="width:15%">Evidencia</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Artículo 1°: Objetivo</td>
-                    <td><span class="chip ok">En Cumplimiento</span></td>
-                    <td>Informativo - No requiere acciones</td>
-                    <td>—</td>
-                </tr>
-                <tr>
-                    <td>Artículo 4°: Supervisión</td>
-                    <td><span class="chip ok">En Cumplimiento</span></td>
-                    <td>Informativo - No requiere acciones</td>
-                    <td>—</td>
-                </tr>
-                <tr>
-                    <td>Artículo 7°: Disposiciones…</td>
-                    <td><span class="chip ok">En Cumplimiento</span></td>
-                    <td>Procedimientos y controles de ciberseguridad</td>
-                    <td><a href="/files/evidencial.pdf">evidencial.pdf</a></td>
-                </tr>
-                <tr>
-                    <td>Artículo 8°: Monitoreo</td>
-                    <td><span class="chip warn">En Proceso</span></td>
-                    <td>Se están calibrando herramientas de monitoreo digital</td>
-                    <td><a href="/files/Presupuesto.pdf">Presupuesto.pdf</a> · <a href="/files/GC.pdf">GC.pdf</a></td>
-                </tr>
-            </tbody>
-        </table>
+        <form asp-action="ReqDetails" asp-controller="Home" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="IdReq" />
+
+            <!-- Usamos SIEMPRE fieldset y lo deshabilitamos según readOnly -->
+            <fieldset @(readOnly ? "disabled" : "")>
+                @if (Model.Items != null && Model.Items.Count > 0)
+                {
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:5%">N°</th>
+                                <th style="width:50%">Detalle</th>
+                                <th style="width:10%">Cumple</th>
+                                <th style="width:25%">Justificación</th>
+                                <th style="width:10%">Evidencia (URL)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Items.Count; i++)
+                            {
+                                <tr>
+                                    
+                                    <td class="muted">@(i + 1)
+
+                                    </td>
+                                      
+                                    <td>
+                                        <div class="item-detalle">@Model.Items[i].Detalle</div>
+                                    </td>
+                                    <td>
+                                        <input class="form-check-input" asp-for="Items[i].Cumplimiento" type="checkbox" />
+                                    </td>
+                                    <td>
+                                        <textarea class="form-control" asp-for="Items[i].Justificacion"></textarea>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" asp-for="Items[i].ArchivoUrl" />
+                                    </td>
+                                </tr>
+                                <input type="hidden" asp-for="Items[i].IdItem" />
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="muted">Este requisito aún no tiene ítems cargados.</div>
+                }
+            </fieldset>
+
+            @if (!readOnly)
+            {
+                <div class="actions">
+                    <button type="submit" class="btn">Guardar cambios</button>
+                    <a href="@Url.Action("reqView", "Home")" class="btn gray">Cancelar</a>
+                </div>
+            }
+            else
+            {
+                <div class="muted" style="margin-top:10px;">Vista de <strong>solo lectura</strong>.</div>
+            }
+        </form>
     </div>
 </div>

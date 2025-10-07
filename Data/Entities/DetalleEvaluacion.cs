@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace ReqSaaS_1.Data.Entities
 {
@@ -30,6 +31,7 @@ namespace ReqSaaS_1.Data.Entities
         public string? Detalle { get; set; }
 
         // Navegación
+        [BindNever]
         public Requisito Requisito { get; set; } = null!;
     }
 }

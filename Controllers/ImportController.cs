@@ -42,24 +42,28 @@ namespace ReqSaaS_1.Controllers
             var xml = await _bcn.GetNormaXmlAsync(idNorma, ct);
             if (xml is null) return Json(Array.Empty<BCNSearchResultDto>());
 
-            // Si ya usas tu parser centralizado:
             var dto = RequisitoImportParser.Parse(
                 idNorma,
                 xml,
                 $"https://www.leychile.cl/Consulta/obtxml?opt=7&idNorma={idNorma}"
             );
 
+            // 👉 Componer el mismo título que usas al guardar
+            var numero = ExtraerNumeroNorma(xml);
+            var tituloFinal = ComposeTitulo(dto.Tipo, numero, dto.Titulo);
+
             return Json(new[]
             {
-                new BCNSearchResultDto
-                {
-                    NormaIDBCN = idNorma,
-                    Titulo = dto.Titulo,
-                    Entidad = dto.Entidad,
-                    Tipo = dto.Tipo
-                }
-            });
+        new BCNSearchResultDto
+        {
+            NormaIDBCN = idNorma,
+            Titulo     = tituloFinal, // <-- devolvemos el compuesto
+            Entidad    = dto.Entidad,
+            Tipo       = dto.Tipo
         }
+    });
+        }
+
 
         // =========================
         // POST import/bcn/requisitos/{idNorma}
@@ -82,16 +86,33 @@ namespace ReqSaaS_1.Controllers
             var url = $"https://www.leychile.cl/Consulta/obtxml?opt=7&idNorma={idNorma}";
             var dto = RequisitoImportParser.Parse(idNorma, xml, url);
 
-            // 3) Determina ID_tipo (si corresponde)
-            static int? MapTipoToId(string? tipo) => tipo?.Trim().ToLowerInvariant() switch
+            // 3) Determina ID_tipo desde la tabla maestra (nombre exacto, normalizado)
+            static string NormalizeKey(string s)
             {
-                "ley" => 1,
-                "decreto" => 2,
-                "reglamento" => 3,
-                "resolución" or "resolucion" => 4,
-                _ => null
-            };
-            var idTipo = MapTipoToId(dto.Tipo);
+                if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+                s = s.Trim().ToLowerInvariant()
+                     .Replace("á", "a").Replace("é", "e").Replace("í", "i").Replace("ó", "o").Replace("ú", "u")
+                     .Replace("ü", "u").Replace("ñ", "n");
+                return s;
+            }
+
+            int? idTipo = null;
+            {
+                var dtoKey = NormalizeKey(dto.Tipo ?? "");
+                // Trae todos una sola vez (catálogo pequeño y estable)
+                var tipos = await _db.Tipos.AsNoTracking().ToListAsync(ct);
+
+                var match = tipos.FirstOrDefault(t => NormalizeKey(t.Nombre) == dtoKey);
+                if (match != null)
+                    idTipo = match.IdTipo;
+                else
+                {
+                    var otro = tipos.FirstOrDefault(t => NormalizeKey(t.Nombre) == "otro");
+                    idTipo = otro?.IdTipo; // fallback a "OTRO" si existe, si no queda null
+                }
+            }
+            var numero = ExtraerNumeroNorma(xml);
+            var tituloFinal = ComposeTitulo(dto.Tipo, numero, dto.Titulo);
 
             // 4) Upsert del REQUISITO por (norma + organismo)
             var requisito = await _db.Requisitos
@@ -102,7 +123,7 @@ namespace ReqSaaS_1.Controllers
             {
                 requisito = new Requisito
                 {
-                    Titulo = dto.Titulo,
+                    Titulo = tituloFinal,
                     Descripcion = dto.Descripcion,
                     Entidad = dto.Entidad,
                     PorcentajeCumplimiento = 0,
@@ -115,7 +136,7 @@ namespace ReqSaaS_1.Controllers
             }
             else
             {
-                requisito.Titulo = dto.Titulo;
+                requisito.Titulo = tituloFinal;
                 requisito.Descripcion = dto.Descripcion;
                 requisito.Entidad = dto.Entidad;
                 requisito.IdTipo = idTipo;
@@ -203,6 +224,48 @@ namespace ReqSaaS_1.Controllers
 
             return textos;
         }
+        // Extrae el <Numero> (o variantes) desde el XML de BCN
+        private static string? ExtraerNumeroNorma(string xml)
+        {
+            var doc = XDocument.Parse(xml);
+            XNamespace ns = "http://www.leychile.cl/esquemas";
+
+            // Intentos con nombres más comunes
+            foreach (var tag in new[] { "Numero", "NumeroNorma", "NumeroOficial" })
+            {
+                var val = doc.Descendants(ns + tag)
+                             .Select(n => (string?)n.Value)
+                             .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+                if (!string.IsNullOrWhiteSpace(val))
+                    return val!.Trim();
+            }
+
+            // Fallback por nombre local (por si cambia el namespace)
+            var any = doc.Descendants()
+                         .FirstOrDefault(e =>
+                             e.Name.LocalName.Equals("Numero", StringComparison.OrdinalIgnoreCase) ||
+                             e.Name.LocalName.Contains("Numero", StringComparison.OrdinalIgnoreCase));
+            var v2 = any?.Value?.Trim();
+            return string.IsNullOrWhiteSpace(v2) ? null : v2;
+        }
+
+        // Arma: "{Tipo} N° {Numero} — {TítuloActual}"
+        private static string ComposeTitulo(string? tipo, string? numero, string? tituloActual)
+        {
+            var t = (tipo ?? "").Trim();
+            var n = (numero ?? "").Trim();
+            var baseTitulo = (tituloActual ?? "").Trim();
+
+            string prefix = string.Empty;
+            if (!string.IsNullOrEmpty(t) && !string.IsNullOrEmpty(n)) prefix = $"{t} N° {n}";
+            else if (!string.IsNullOrEmpty(t)) prefix = t;
+            else if (!string.IsNullOrEmpty(n)) prefix = $"N° {n}";
+
+            if (string.IsNullOrEmpty(prefix)) return baseTitulo;
+            if (string.IsNullOrEmpty(baseTitulo)) return prefix;
+            return $"{prefix} - {baseTitulo}";
+        }
+
 
         // Normaliza espacios para comparar textos iguales con distinto espaciado
         private static string Normalize(string s)

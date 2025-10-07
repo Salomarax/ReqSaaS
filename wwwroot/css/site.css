@@ -165,10 +165,11 @@ body {
    ========================================================= */
 
 /* Contenedor de página */
+
 .page {
-    max-width: 1200px;
+    max-width: 1300px;
     margin: 0 auto;
-    padding: 16px 18px;
+    padding: 16px 18px; /* <- esta es la diferencia clave */
 }
 
 .page-header {
@@ -421,3 +422,5 @@ body {
     .table-clean a:hover {
         text-decoration: underline;
     }
+
+

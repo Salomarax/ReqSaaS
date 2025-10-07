@@ -7,11 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 
 <style>
-    .page {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
+  
     .page-header {
         text-align: center;
         margin: 8px 0 18px;
@@ -143,7 +139,11 @@
     </div>
 
     <div class="filters">
-        <input id="flt-text" type="text" placeholder="Buscar por título o entidad…" />
+        <select >
+            <option value="">Todos los estados</option>
+            <option value="">En Cumplimiento</option>
+            <option value="">En Proceso</option>
+        </select>
         <select id="flt-tipo">
             <option value="">Todos los tipos</option>
         </select>
@@ -168,11 +168,50 @@
         </table>
     </div>
 </div>
+
+<!-- Modal confirmación borrado -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="@Url.Action("DeleteReq","Modify")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="deleteReqId" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeleteLabel">Confirmar eliminación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1 fw-semibold">¿Seguro que desea borrar todo el requisito y sus evidencias?</p>
+                    <small class="text-muted">Se eliminarán todos los ítems asociados y sus archivos/URLs de evidencia. Esta acción es irreversible.</small>
+                    <div class="mt-3 p-2 bg-light rounded border">
+                        <span class="text-secondary">Requisito:</span>
+                        <span id="deleteReqTitle" class="fw-medium"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Sí, borrar todo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@{
+    // Plantillas con marcador __ID__
+    var viewUrlTpl = Url.Action("ReqDetails", "Home", new { id = "__ID__", ro = true });
+    var evalUrlTpl = Url.Action("ReqDetails", "Home", new { id = "__ID__" });
+}
+
 @section Scripts {
     <script>
         (() => {
           const urlResumen = '@Url.Action("RequisitosResumen", "Home")';
           const urlTipos   = '@Url.Action("Tipos", "Home")';
+
+          // Inyectamos las plantillas desde Razor (sin &amp;)
+          const viewUrlTpl = '@Html.Raw(viewUrlTpl)';
+          const evalUrlTpl = '@Html.Raw(evalUrlTpl)';
 
           const $rows = document.getElementById('req-rows');
           const $txt  = document.getElementById('flt-text');
@@ -188,7 +227,7 @@
           };
 
           const estadoBadge = (pct) => pct>=100 ? `<span class="badge badge-green">Cumplido</span>`
-                                 : pct>0 ? `<span class="badge badge-blue">En cumplimiento</span>`
+                                 : pct>0 ? `<span class="badge badge-blue">En proceso</span>`
                                  : `<span class="badge badge-gray">Pendiente</span>`;
           const fmtNro = id => "REQ-" + String(id ?? '').padStart(3,'0');
           const tipoNombre = (id) => tiposMap.get(Number(id)) || '—';
@@ -199,8 +238,7 @@
               return;
             }
 
-            $rows.innerHTML = list.map(r => {
-              // lee ambas variantes: PascalCase y camelCase
+            $rows.innerHTML = list.map((r, idx) => {
               const id        = get(r, ['IdReq','idReq','id'], '');
               const titulo    = get(r, ['Titulo','titulo'], '');
               const entidad   = get(r, ['Entidad','entidad'], '—');
@@ -212,7 +250,7 @@
 
               return `
                 <tr>
-                  <td><span class="badge badge-purple">${fmtNro(id)}</span></td>
+                  <td><span class="badge badge-purple" title="ID real: ${id}">${idx + 1}</span></td>
                   <td>
                     <div style="font-weight:600;color:#111827">${titulo}</div>
                     <div class="muted">Entidad: ${entidad} · BCN ${bcn}</div>
@@ -224,10 +262,17 @@
                     <small>${porcentaje}% — ${ok} de ${total} artículos</small>
                   </td>
                   <td class="actions">
-                    <a title="Ver" href="#">👁️</a>
-                    @if (User.HasClaim("nivel", "2") || User.HasClaim("nivel", "3"))
+                    <a title="Ver" href="${viewUrlTpl.replace('__ID__', id)}">👁️</a>
+                    @if (canCrud)
                     {
-                              <text><a title="Editar" href="#">✏️</a><a title="Eliminar" href="#">🗑️</a></text>
+                          <text>
+                            <a title="Evaluar" href="${evalUrlTpl.replace('__ID__', id)}">✏️</a>
+                            <a title="Eliminar"
+                               href="#"
+                               class="btn-delete"
+                               data-id="${id}"
+                               data-title="${(titulo||'').replace(/"/g,'&quot;')}">🗑️</a>
+                          </text>
                     }
                   </td>
                 </tr>`;
@@ -254,10 +299,11 @@
               if (!res.ok) throw new Error('HTTP ' + res.status);
               const lista = await res.json(); // [{id, nombre}]
               tiposMap = new Map((lista || []).map(t => [Number(t.id), t.nombre]));
-              $tipo.innerHTML = `<option value="">Todos los tipos</option>` +
+              document.getElementById('flt-tipo').innerHTML =
+                `<option value="">Todos los tipos</option>` +
                 (lista || []).map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
             }catch{
-              // si falla, dejamos solo "Todos los tipos" y el render mostrará "—"
+              // si falla, dejamos solo "Todos los tipos"
             }
           }
 
@@ -295,5 +341,23 @@
             loadTipos(); loadResumen();
           }
         })();
+
+        // Delegación: abrir modal al click en 🗑️
+        document.addEventListener('click', function (e) {
+          const a = e.target.closest('.btn-delete');
+          if (!a) return;
+          e.preventDefault();
+
+          const id = a.getAttribute('data-id');
+          const title = a.getAttribute('data-title') || 'Sin título';
+
+          document.getElementById('deleteReqId').value = id;
+          document.getElementById('deleteReqTitle').textContent = title;
+
+          // Bootstrap Modal (requiere bootstrap.bundle.js)
+          const modalEl = document.getElementById('confirmDeleteModal');
+          const modal = new bootstrap.Modal(modalEl);
+          modal.show();
+        });
     </script>
 }

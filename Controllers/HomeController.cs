@@ -317,5 +317,87 @@ public class HomeController : Controller
         return Ok(tipos);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> ReqDetails(int id, bool ro = false, CancellationToken ct = default)
+    {
+        var idOrganismo = User.FindFirst("rut")?.Value ?? "";
+        var nivel = User.FindFirst("nivel")?.Value ?? "1";
+        var canCrud = (nivel == "2" || nivel == "3");
+
+        var vm = await _db.Requisitos
+            .Where(r => r.IdReq == id && r.IdOrganismo == idOrganismo)
+            .Select(r => new RequisitoDetalleVM
+            {
+                IdReq = r.IdReq,
+                Titulo = r.Titulo ?? "",
+                Entidad = r.Entidad,
+                IdTipo = r.IdTipo,
+                TipoNombre = _db.Set<Tipo>().Where(t => t.IdTipo == r.IdTipo).Select(t => t.Nombre).FirstOrDefault(),
+                NormaIDBCN = r.NormaIDBCN
+            })
+            .FirstOrDefaultAsync(ct);
+
+        if (vm == null) return NotFound();
+
+        vm.Items = await _db.DetalleEvaluaciones
+            .Where(d => d.IdRequisito == id)
+            .OrderBy(d => d.IdItem)
+            .ToListAsync(ct);
+
+        // Modo lectura si viene ?ro=true o si el usuario no puede editar
+        ViewBag.ReadOnly = ro || !canCrud;
+
+        return View("reqView_Details", vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReqDetails(RequisitoDetalleVM model, CancellationToken ct)
+    {
+        var idOrganismo = User.FindFirst("rut")?.Value ?? "";
+        var nivel = User.FindFirst("nivel")?.Value ?? "1";
+        var canCrud = (nivel == "2" || nivel == "3");
+        var okOwner = await _db.Requisitos
+            .AnyAsync(r => r.IdReq == model.IdReq && r.IdOrganismo == idOrganismo, ct);
+        if (!canCrud) return Forbid();
+
+        if (!okOwner) return Unauthorized();
+
+        if (model.Items?.Count > 0)
+        {
+            var ids = model.Items.Select(i => i.IdItem).ToList();
+
+            var dbItems = await _db.DetalleEvaluaciones
+                .Where(d => d.IdRequisito == model.IdReq && ids.Contains(d.IdItem))
+                .OrderBy(d => d.IdItem)   // ok
+                .ToListAsync(ct);
+
+            var map = dbItems.ToDictionary(d => d.IdItem);
+            foreach (var vm in model.Items)
+            {
+                if (map.TryGetValue(vm.IdItem, out var d))
+                {
+                    d.Cumplimiento = vm.Cumplimiento;
+                    d.Justificacion = vm.Justificacion;
+                    d.ArchivoUrl = vm.ArchivoUrl;
+                }
+            }
+            await _db.SaveChangesAsync(ct);
+
+            // Recalcula %
+            var tot = await _db.DetalleEvaluaciones.CountAsync(d => d.IdRequisito == model.IdReq, ct);
+            var cumpl = await _db.DetalleEvaluaciones.CountAsync(d => d.IdRequisito == model.IdReq && d.Cumplimiento, ct);
+            var req = await _db.Requisitos.FindAsync(new object[] { model.IdReq }, ct);
+            if (req != null)
+            {
+                var pct = tot == 0 ? 0 : (int)Math.Round(100.0 * cumpl / Math.Max(1, tot), 0);
+                try { req.PorcentajeCumplimiento = pct; } catch { }
+                await _db.SaveChangesAsync(ct);
+            }
+        }
+
+        TempData["ok"] = "Cambios guardados.";
+        return RedirectToAction(nameof(ReqDetails), new { id = model.IdReq });
+    }
 
 }
