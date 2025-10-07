@@ -7,127 +7,6 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 
-<style>
-   
-
-    .tabs {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 14px
-    }
-
-    .tab {
-        padding: 10px 14px;
-        border-radius: 999px;
-        border: 1px solid #d1d5db;
-        background: #fff;
-        cursor: pointer
-    }
-
-        .tab.active {
-            background: #0ea5e9;
-            color: #fff;
-            border-color: #0ea5e9
-        }
-
-    .card {
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 8px 20px rgba(0,0,0,.06);
-        padding: 18px
-    }
-
-    .section-title {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-        color: #0f172a
-    }
-
-    .hint {
-        color: #64748b;
-        font-size: .95rem;
-        margin-top: -4px;
-        margin-bottom: 14px
-    }
-
-    .grid {
-        display: grid;
-        gap: 12px
-    }
-
-    .g2 {
-        grid-template-columns: 1fr 1fr
-    }
-
-    label {
-        font-weight: 600;
-        color: #111827
-    }
-
-    input[type="text"], textarea, select, input[type="file"] {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        background: #fff
-    }
-
-    textarea {
-        min-height: 110px;
-        resize: vertical
-    }
-
-    .btn {
-        border: none;
-        background: #16a34a;
-        color: #fff;
-        padding: 10px 14px;
-        border-radius: 10px;
-        cursor: pointer
-    }
-
-        .btn.gray {
-            background: #e5e7eb;
-            color: #111827
-        }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: .95rem
-    }
-
-    th, td {
-        padding: 10px;
-        border-bottom: 1px solid #eef2f7;
-        text-align: left
-    }
-
-    th {
-        background: #f8fafc;
-        color: #0f172a
-    }
-
-    .actions button {
-        border: none;
-        background: #0ea5e9;
-        color: #fff;
-        padding: 6px 10px;
-        border-radius: 8px;
-        cursor: pointer
-    }
-
-    .pill {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 999px;
-        background: #f1f5f9;
-        color: #0f172a;
-        font-size: .85rem
-    }
-</style>
 
 <!-- Form “fuente” para extraer el AntiForgery token (fuera de otros forms) -->
 <form id="af-form" method="post" style="display:none">
@@ -138,7 +17,7 @@
     <div class="tabs">
         <button class="tab active" data-pane="manual">Manual</button>
         <button class="tab" data-pane="bcn">Importar desde BCN</button>
-        <button class="tab" data-pane="pdf">Cargar documento</button>
+        <button class="tab" data-pane="pdf" disabled>Cargar documento</button>
     </div>
 
 

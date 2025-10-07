@@ -6,131 +6,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 
-<style>
-  
-    .page-header {
-        text-align: center;
-        margin: 8px 0 18px;
-    }
 
-        .page-header h2 {
-            color: #2e7d32;
-            margin: 0 0 6px;
-            font-family: 'Inter',sans-serif;
-        }
-
-        .page-header p {
-            color: #6b7280;
-            margin: 0;
-        }
-
-    .filters {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin-bottom: 16px;
-    }
-
-        .filters input, .filters select, .filters button {
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            font-size: 14px;
-            background: #fff;
-        }
-
-        .filters button {
-            background: #388e3c;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-        }
-
-    .table-wrapper {
-        background: #fff;
-        border-radius: 14px;
-        padding: 20px;
-        box-shadow: 0 8px 24px rgba(0,0,0,.08);
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-    }
-
-    th, td {
-        padding: 12px 10px;
-        border-bottom: 1px solid #eef2f7;
-        text-align: left;
-    }
-
-    th {
-        background: #f8fafc;
-        color: #0f172a;
-        font-weight: 600;
-    }
-
-    .badge {
-        padding: 6px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 600;
-        display: inline-block;
-    }
-
-    .badge-purple {
-        background: #e9d5ff;
-        color: #4c1d95;
-    }
-
-    .badge-blue {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .badge-green {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .badge-gray {
-        background: #e5e7eb;
-        color: #374151;
-    }
-
-    .progress {
-        background: #e5e7eb;
-        border-radius: 10px;
-        height: 8px;
-        width: 160px;
-        overflow: hidden;
-        display: inline-block;
-        vertical-align: middle;
-        margin-right: 6px;
-    }
-
-        .progress > div {
-            background: #16a34a;
-            height: 100%;
-        }
-
-    .muted {
-        color: #6b7280;
-    }
-
-    .actions a {
-        text-decoration: none;
-        margin-right: 10px;
-        font-size: 18px;
-    }
-
-    .center {
-        text-align: center;
-        color: #64748b;
-    }
-</style>
 
 <div class="page page--fluid">
 
@@ -139,16 +15,18 @@
         <p>Estado actual de cumplimiento y progreso de cada requisito normativo</p>
     </div>
 
-    <div class="filters">
-        <select >
+    <div class="filters filters--compact">
+        <select id="flt-estado">
             <option value="">Todos los estados</option>
-            <option value="">En Cumplimiento</option>
-            <option value="">En Proceso</option>
+            <option value="C">En Cumplimiento</option>
+            <option value="P">En Proceso</option>
         </select>
+
         <select id="flt-tipo">
             <option value="">Todos los tipos</option>
         </select>
-        <button type="button" id="btn-filtrar">Filtrar</button>
+
+        <button type="button" id="btn-clear">Borrar filtros</button>
     </div>
 
     <div class="table-wrapper">
@@ -203,42 +81,107 @@
     var viewUrlTpl = Url.Action("ReqDetails", "Home", new { id = "__ID__", ro = true });
     var evalUrlTpl = Url.Action("ReqDetails", "Home", new { id = "__ID__" });
 }
-
 @section Scripts {
     <script>
         (() => {
-          const urlResumen = '@Url.Action("RequisitosResumen", "Home")';
-          const urlTipos   = '@Url.Action("Tipos", "Home")';
+          /* ============================
+             Endpoints que usa la vista
+             ============================ */
+          const urlResumen = '@Url.Action("RequisitosResumen", "Home")'; // API que devuelve el resumen de requisitos
+          const urlTipos   = '@Url.Action("Tipos", "Home")';             // API que devuelve el catálogo de tipos
 
-          // Inyectamos las plantillas desde Razor (sin &amp;)
-          const viewUrlTpl = '@Html.Raw(viewUrlTpl)';
-          const evalUrlTpl = '@Html.Raw(evalUrlTpl)';
+          /* ==========================================================
+             Plantillas de URL para acciones (con marcador __ID__)
+             ========================================================== */
+          const viewUrlTpl = '@Html.Raw(viewUrlTpl)'; // plantilla para “Ver”
+          const evalUrlTpl = '@Html.Raw(evalUrlTpl)'; // plantilla para “Evaluar”
 
-          const $rows = document.getElementById('req-rows');
-          const $txt  = document.getElementById('flt-text');
-          const $tipo = document.getElementById('flt-tipo');
-          const $btn  = document.getElementById('btn-filtrar');
+          /* ============================
+             Referencias a elementos DOM
+             ============================ */
+          const $rows    = document.getElementById('req-rows');                // <tbody> donde pintamos filas
+          const $txt     = document.getElementById('flt-text');                // (opcional) cuadro de búsqueda
+          const $tipo    = document.getElementById('flt-tipo');                // <select> de tipos
+          const $estado  = document.querySelector('.filters select:not(#flt-tipo)'); // primer <select> (estado)
+          // Botón “Borrar filtros”. Si no existe #btn-clear, intenta con el antiguo #btn-filtrar
+          const $btnClear = document.getElementById('btn-clear') || document.getElementById('btn-filtrar');
 
-          let data = [];
-          let tiposMap = new Map(); // id -> nombre
+          /* ============================
+             Estado en memoria (data cruda)
+             ============================ */
+          let data = [];              // arreglo con todos los requisitos traídos desde la API
+          let tiposMap = new Map();   // diccionario idTipo -> nombre
 
+          /* -----------------------------------------------------------------
+             util get(): acceso seguro a propiedades (acepta varias claves)
+             ----------------------------------------------------------------- */
           const get = (o, keys, def=null) => {
-            for (const k of keys) if (o != null && o[k] !== undefined && o[k] !== null) return o[k];
-            return def;
+            for (const k of keys) // recorre posibles nombres de la misma propiedad
+              if (o != null && o[k] !== undefined && o[k] !== null) return o[k];
+            return def;           // si ninguna existe, devuelve el valor por defecto
           };
 
-          const estadoBadge = (pct) => pct>=100 ? `<span class="badge badge-green">Cumplido</span>`
-                                 : pct>0 ? `<span class="badge badge-blue">En proceso</span>`
-                                 : `<span class="badge badge-gray">Pendiente</span>`;
-          const fmtNro = id => "REQ-" + String(id ?? '').padStart(3,'0');
+          /* -----------------------------------------------------------------
+             pctOf(): devuelve el % de cumplimiento de un registro
+             - usa r.Porcentaje si viene
+             - si no, lo calcula con Cumplidos/Total
+             - siempre entre 0 y 100
+             ----------------------------------------------------------------- */
+          const pctOf = (r) => {
+            let pct = get(r, ['Porcentaje','porcentaje'], null); // intenta leer el porcentaje “servido”
+            if (pct == null) {                                    // si no vino, lo calculamos
+              const ok    = Number(get(r, ['Cumplidos','cumplidos'], 0));
+              const total = Number(get(r, ['Total','total'], 0));
+              pct = total > 0 ? Math.round((ok / total) * 100) : 0;
+            }
+            pct = Number.isFinite(pct) ? pct : 0;                 // sanea valores raros
+            return Math.max(0, Math.min(100, pct));               // clamp 0..100
+          };
+
+          /* -----------------------------------------------------------------
+             estadoBadge(): solo dos estados visuales
+             - 100% => En Cumplimiento
+             - resto => En Proceso
+             ----------------------------------------------------------------- */
+          const estadoBadge = (pct) =>
+            pct >= 100
+              ? `<span class="badge badge-green">En Cumplimiento</span>`
+              : `<span class="badge badge-blue">En Proceso</span>`;
+
+          // Devuelve el nombre del tipo desde el map (si no, '—')
           const tipoNombre = (id) => tiposMap.get(Number(id)) || '—';
 
+          /* -----------------------------------------------------------------
+             readEstadoFilter(): lee el filtro de estado del <select>
+             Devuelve:
+               ''  -> sin filtro
+               'C' -> En Cumplimiento
+               'P' -> En Proceso
+             Usa .value si existe, y si no intenta inferir por el texto visible.
+             ----------------------------------------------------------------- */
+          const readEstadoFilter = () => {
+            if (!$estado) return '';                             // si no hay select, no hay filtro
+            const val = ($estado.value || '').trim();            // primero intentamos por value
+            if (val) return val;                                 // ideal: 'C' o 'P'
+
+            // Fallback: deduce por el texto del option seleccionado
+            const txt = ($estado.options[$estado.selectedIndex]?.text || '').toLowerCase();
+            if (txt.includes('cumpl')) return 'C';
+            if (txt.includes('proce')) return 'P';
+            return '';
+          };
+
+          /* -----------------------------------------------------------------
+             render(): pinta la tabla a partir de una lista de requisitos
+             ----------------------------------------------------------------- */
           function render(list){
-            if (!Array.isArray(list) || list.length===0){
+            if (!Array.isArray(list) || list.length === 0) {
+              // Mensaje vacío si no hay datos que mostrar
               $rows.innerHTML = `<tr><td colspan="6" class="center">No hay requisitos para mostrar.</td></tr>`;
               return;
             }
 
+            // Construye todas las filas de una vez (mejor perf que innerHTML por fila)
             $rows.innerHTML = list.map((r, idx) => {
               const id        = get(r, ['IdReq','idReq','id'], '');
               const titulo    = get(r, ['Titulo','titulo'], '');
@@ -246,7 +189,7 @@
               const idTipo    = get(r, ['IdTipo','idTipo'], null);
               const total     = get(r, ['Total','total'], 0);
               const ok        = get(r, ['Cumplidos','cumplidos'], 0);
-              const porcentaje= Math.max(0, Math.min(100, Math.round(get(r, ['Porcentaje','porcentaje'], 0))));
+              const pct       = pctOf(r);
               const bcn       = get(r, ['NormaIDBCN','normaIDBCN','normaIdBcn'], '—');
 
               return `
@@ -257,10 +200,10 @@
                     <div class="muted">Entidad: ${entidad} · BCN ${bcn}</div>
                   </td>
                   <td><span class="pill">${tipoNombre(idTipo)}</span></td>
-                  <td>${estadoBadge(porcentaje)}</td>
+                  <td>${estadoBadge(pct)}</td>
                   <td>
-                    <span class="progress"><div style="width:${porcentaje}%"></div></span>
-                    <small>${porcentaje}% — ${ok} de ${total} artículos</small>
+                    <span class="progress"><div style="width:${pct}%"></div></span>
+                    <small>${pct}% — ${ok} de ${total} artículos</small>
                   </td>
                   <td class="actions">
                     <a title="Ver" href="${viewUrlTpl.replace('__ID__', id)}">👁️</a>
@@ -280,82 +223,141 @@
             }).join('');
           }
 
+          /* -----------------------------------------------------------------
+             applyFilter(): aplica los filtros actuales sobre `data` y repinta
+             - Texto (si existe #flt-text)
+             - Tipo  (#flt-tipo)
+             - Estado (primer <select> de .filters)
+             ----------------------------------------------------------------- */
           function applyFilter(){
-            const q = ($txt.value||'').toLowerCase().trim();
-            const t = $tipo.value;
-            let list = data.slice();
+            const q = (($txt && $txt.value) || '').toLowerCase().trim(); // texto a buscar
+            const t = ($tipo && $tipo.value) || '';                      // id de tipo
+            const e = readEstadoFilter();                                // '' | 'C' | 'P'
 
-            if (q) list = list.filter(r =>
-              (get(r,['Titulo','titulo'],'').toLowerCase().includes(q)) ||
-              (get(r,['Entidad','entidad'],'').toLowerCase().includes(q))
-            );
+            let list = data.slice();                                     // copia de trabajo
+
+            // Filtro de texto: título o entidad
+            if (q) {
+              list = list.filter(r =>
+                (get(r,['Titulo','titulo'],'').toLowerCase().includes(q)) ||
+                (get(r,['Entidad','entidad'],'').toLowerCase().includes(q))
+              );
+            }
+
+            // Filtro por tipo
             if (t) list = list.filter(r => String(get(r,['IdTipo','idTipo'], '')) === t);
 
-            render(list);
+            // Filtro por estado (se deriva del %)
+            if (e) list = list.filter(r => (pctOf(r) >= 100 ? 'C' : 'P') === e);
+
+            render(list);                                                // repinta con el resultado
           }
 
+          /* -----------------------------------------------------------------
+             loadTipos(): carga catálogo de tipos y llena #flt-tipo
+             ----------------------------------------------------------------- */
           async function loadTipos(){
-            try{
+            try {
               const res = await fetch(urlTipos, { cache:'no-store', credentials:'same-origin' });
               if (!res.ok) throw new Error('HTTP ' + res.status);
-              const lista = await res.json(); // [{id, nombre}]
+
+              const lista = await res.json();                            // [{ id, nombre }]
               tiposMap = new Map((lista || []).map(t => [Number(t.id), t.nombre]));
-              document.getElementById('flt-tipo').innerHTML =
-                `<option value="">Todos los tipos</option>` +
-                (lista || []).map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
-            }catch{
-              // si falla, dejamos solo "Todos los tipos"
+
+              if ($tipo) {
+                // Option vacío (Todos) + options del backend
+                $tipo.innerHTML =
+                  `<option value="">Todos los tipos</option>` +
+                  (lista || []).map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+              }
+            } catch {
+              // si falla, dejamos solo “Todos los tipos”
             }
           }
 
+          /* -----------------------------------------------------------------
+             loadResumen(): trae los requisitos y realiza el primer render
+             ----------------------------------------------------------------- */
           async function loadResumen(){
             try{
               const res = await fetch(urlResumen, { cache:'no-store', credentials:'same-origin' });
               if(!res.ok){
+                // Manejo de error “amigable”
                 const txt = await res.text();
-                try{ const j = JSON.parse(txt);
-                     const msg = j.detail || j.error || txt;
-                     $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Error al cargar el resumen: ${msg}</td></tr>`;
+                try{
+                  const j = JSON.parse(txt);
+                  const msg = j.detail || j.error || txt;
+                  $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Error al cargar el resumen: ${msg}</td></tr>`;
                 }catch{
-                     $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Error al cargar el resumen: HTTP ${res.status}</td></tr>`;
+                  $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Error al cargar el resumen: HTTP ${res.status}</td></tr>`;
                 }
                 return;
               }
-              const json = await res.json();
+
+              const json = await res.json();                             // esperamos un array
               if(!Array.isArray(json)){
                 $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Formato inesperado del resumen.</td></tr>`;
                 return;
               }
-              data = json;
-              render(data);
+
+              data = json;                                               // guardamos data cruda
+              render(data);                                              // primer pintado (sin filtros)
             }catch(e){
               console.error(e);
               $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Error al cargar el resumen (ver consola).</td></tr>`;
             }
           }
 
-          $btn.addEventListener('click', applyFilter);
+          /* -----------------------------------------------------------------
+             clearFilters(): limpia los filtros y repinta TODO otra vez
+             ----------------------------------------------------------------- */
+          function clearFilters(ev){
+            ev?.preventDefault();            // evita submit o navegación
+            if ($txt)    $txt.value    = ''; // limpia texto
+            if ($tipo)   $tipo.value   = ''; // limpia tipo
+            if ($estado) $estado.value = ''; // limpia estado (y por si el “Todos” no tiene value…)
+            if ($estado && !$estado.value) $estado.selectedIndex = 0; // asegura seleccionar la 1ª opción
 
+            // Si ya hay data, repintamos con todo; si aún no, la cargamos
+            if (data && data.length) render(data); else loadResumen();
+          }
+
+          /* ============================
+             Eventos (filtros en vivo)
+             ============================ */
+          if ($tipo)    $tipo.addEventListener('change', applyFilter); // al cambiar el tipo
+          if ($estado)  $estado.addEventListener('change', applyFilter); // al cambiar el estado
+          if ($txt)     $txt.addEventListener('input',  applyFilter); // búsqueda en vivo
+          if ($btnClear) $btnClear.addEventListener('click', clearFilters); // “Borrar filtros”
+
+          /* ============================
+             Arranque (bootstrap inicial)
+             ============================ */
           if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => { loadTipos(); loadResumen(); });
           } else {
             loadTipos(); loadResumen();
           }
         })();
+    </script>
 
-        // Delegación: abrir modal al click en 🗑️
+    <script>
+        /* -----------------------------------------------------------------
+           Delegación para abrir el modal de eliminar (ícono 🗑️)
+           ----------------------------------------------------------------- */
         document.addEventListener('click', function (e) {
-          const a = e.target.closest('.btn-delete');
-          if (!a) return;
-          e.preventDefault();
+          const a = e.target.closest('.btn-delete'); // busca un ancestro con la clase
+          if (!a) return;                             // si no fue un click en eliminar, salimos
+          e.preventDefault();                         // evita navegación
 
-          const id = a.getAttribute('data-id');
-          const title = a.getAttribute('data-title') || 'Sin título';
+          const id    = a.getAttribute('data-id');    // ID del requisito
+          const title = a.getAttribute('data-title') || 'Sin título'; // título amigable
 
+          // Inyecta datos en el modal
           document.getElementById('deleteReqId').value = id;
           document.getElementById('deleteReqTitle').textContent = title;
 
-          // Bootstrap Modal (requiere bootstrap.bundle.js)
+          // Muestra el modal (requiere bootstrap.bundle.js)
           const modalEl = document.getElementById('confirmDeleteModal');
           const modal = new bootstrap.Modal(modalEl);
           modal.show();

@@ -20,9 +20,9 @@
     @if (User?.Identity?.IsAuthenticated == true)
     {
         <div class="logout">
-            <form asp-controller="Home" asp-action="Logout" method="post" class="inline">
+            <form asp-controller="Home" asp-action="Logout" method="post">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="btn-link">📕 Cerrar sesión</button>
+                <button type="submit">Cerrar sesión</button>
             </form>
         </div>
     }

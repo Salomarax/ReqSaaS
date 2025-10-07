@@ -7,111 +7,12 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 
-<style>
-    
-    .card {
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 8px 20px rgba(0,0,0,.06);
-        padding: 18px;
-    }
-
-    .header {
-        margin-bottom: 14px;
-    }
-
-        .header h2 {
-            margin: 0 0 6px;
-            color: #0f172a;
-        }
-
-    .muted {
-        color: #6b7280;
-    }
-
-    .pill {
-        display: inline-block;
-        padding: 3px 8px;
-        border-radius: 999px;
-        background: #f1f5f9;
-        color: #0f172a;
-        font-size: .85rem;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: .95rem;
-    }
-
-    th, td {
-        padding: 10px;
-        border-bottom: 1px solid #eef2f7;
-        text-align: left;
-        vertical-align: top;
-    }
-
-    th {
-        background: #f8fafc;
-        color: #0f172a;
-    }
-
-    textarea {
-        width: 100%;
-        min-height: 68px;
-        resize: vertical;
-    }
-
-    input[type="text"] {
-        width: 100%;
-    }
-
-    .actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 12px;
-    }
-
-    .btn {
-        border: none;
-        background: #16a34a;
-        color: #fff;
-        padding: 10px 14px;
-        border-radius: 10px;
-        cursor: pointer;
-    }
-
-        .btn.gray {
-            background: #e5e7eb;
-            color: #111827;
-        }
-
-    .top-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-    }
-
-    .btn-outline-green {
-        border: 1px solid #16a34a;
-        color: #16a34a;
-        padding: 8px 10px;
-        border-radius: 10px;
-        text-decoration: none;
-    }
-
-    .item-detalle {
-        white-space: pre-wrap; /* conserva saltos de línea */
-        line-height: 1.35;
-    }
-</style>
 
 <div class="page page--fluid">
 
     <div class="card header">
         <div class="top-actions">
-            <h2>@Model.Titulo</h2>
+            <h3>@Model.Titulo</h3>
             <a href="@Url.Action("reqView", "Home")" class="btn-outline-green">← Volver</a>
         </div>
         <div class="muted">

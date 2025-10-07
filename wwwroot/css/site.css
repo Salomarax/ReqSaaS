@@ -1,6 +1,6 @@
-/* =========================================================
-   1) Base tipograf�a y tama�o
-   ========================================================= */
+﻿/* =====================================================================
+   1) Base tipografía y tamaño
+   ===================================================================== */
 html {
     font-size: 14px;
 }
@@ -24,21 +24,21 @@ body {
     margin: 0;
     font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     color: #0f172a;
-    background-color: #ffffff;
+    background-color: #ffffff; /* ← fondo por defecto (app con sidebar) */
 }
 
-/* Enfoques accesibles (respeta Bootstrap) */
+/* Accesibilidad (respeta Bootstrap) */
 .btn:focus,
 .btn:active:focus,
 .btn-link.nav-link:focus,
 .form-control:focus,
 .form-check-input:focus {
-    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem #258cfb;
 }
 
-/* =========================================================
-   2) Layout: app con sidebar y modo plano
-   ========================================================= */
+/* =====================================================================
+   2) Layout: app con sidebar y modo plano (login/landing)
+   ===================================================================== */
 .app-shell {
     display: flex;
     min-height: 100vh;
@@ -47,8 +47,8 @@ body {
 }
 
 .sidebar {
-    width: 160px;
-    flex: 0 0 160px;
+    width: 160px; /* ← ajusta ancho aquí */
+    flex: 0 0 160px; /* ← fija la columna al mismo ancho */
     background: #2ecc40;
     color: #fff;
     display: flex;
@@ -124,10 +124,10 @@ body {
     min-width: 0;
 }
 
-/* Modo plano (login / landing) */
+/* --- Modo plano (login / landing) --- */
 .plain-shell {
     min-height: 100vh;
-    background: linear-gradient(180deg,#a8e063 0%, #56ab2f 100%);
+    background: linear-gradient(180deg,#a8e063 0%, #56ab2f 100%); /* ← solo en login */
 }
 
 .plain-content {
@@ -138,6 +138,7 @@ body {
 }
 
 /* Responsive sidebar */
+/* === Barra superior compacta cuando la sidebar se apila (≤992px) === */
 @media (max-width: 992px) {
     .app-shell {
         flex-direction: column;
@@ -145,42 +146,88 @@ body {
 
     .sidebar {
         width: 100%;
-        border-radius: 0;
+        flex: 0 0 auto; /* evita que ocupe gran altura */
         position: sticky;
         top: 0;
-        z-index: 10;
+        z-index: 1000;
+        border-radius: 0;
+        /* ↓ más compacta */
+        padding: 8px 12px;
+        display: flex;
+        flex-direction: row; /* en una sola fila */
+        align-items: center;
+        gap: 8px;
     }
+
+        .sidebar .brand {
+            font-size: 18px; /* más pequeño que en desktop */
+            margin: 0;
+        }
+
+            .sidebar .brand small { /* quita subtítulo para ganar altura */
+                display: none;
+            }
+
+        .sidebar .nav {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: row;
+            gap: 6px;
+            margin: 0;
+            overflow-x: auto; /* si no cabe, permite desplazamiento horizontal */
+            white-space: nowrap;
+            scrollbar-width: thin; /* navegadores que lo soporten */
+        }
+
+            .sidebar .nav a,
+            .sidebar .logout a {
+                padding: 6px 10px; /* botones más compactos */
+                border-radius: 8px;
+            }
+
+        .sidebar hr {
+            display: none;
+        }
+    /* evita sumar altura innecesaria */
 
     .content {
         border-radius: 0;
-        padding: 16px;
+        padding: 12px 16px; /* un poco menos de padding en móvil */
     }
 }
 
-/* =========================================================
-   3) Componentes comunes (reutilizables en todas las vistas)
-   ========================================================= */
+/* Extra-compacto para pantallas muy pequeñas */
+@media (max-width: 480px) {
+    .sidebar {
+        padding: 6px 10px;
+        gap: 6px;
+    }
 
-/* Contenedor de p�gina
-   � Nota: usamos selectores m�s espec�ficos que .page �a secas�
-     para GANARLE a las reglas embebidas en las vistas. */
+        .sidebar .brand {
+            font-size: 16px;
+        }
+}
+
+
+/* =====================================================================
+   3) Contenedor de página (común a todas las vistas)
+   ===================================================================== */
 .page {
     width: 100%;
     margin: 0 auto;
     padding: 16px clamp(12px, 2vw, 28px);
-    max-width: none; /* sin l�mite */
+    max-width: none; /* sin límite por defecto */
 }
 
-/* Fuerza el ancho fluido dentro del layout con sidebar.
-   El !important es intencional: pisa los <style> de las vistas. */
+/* Versión con tope “cómodo”: aplicada por defecto dentro del layout */
 .content > .page {
     width: 100% !important;
-    max-width: min(96vw - 2rem, 1400px) !important; /* responsivo + tope c�modo */
+    max-width: min(96vw - 2rem, 1400px) !important; /* responsivo + tope */
     padding-left: 0 !important;
     padding-right: 0 !important;
 }
 
-    /* Asegura que �las tarjetas/tablas grandes� ocupen todo el ancho disponible */
+    /* Forzar que “burbujas/grids” principales llenen el ancho disponible */
     .content > .page > .card,
     .content > .page > .card-lg,
     .content > .page > .table-wrap,
@@ -188,6 +235,22 @@ body {
         width: 100% !important;
     }
 
+    /* Página fluida (sin tope de ancho): usa class="page page--fluid" en la vista */
+    .content > .page.page--fluid {
+        max-width: none !important;
+    }
+
+        .content > .page.page--fluid > .card,
+        .content > .page.page--fluid > .table-wrap,
+        .content > .page.page--fluid > .table-wrapper {
+            width: 100% !important;
+            max-width: none;
+        }
+
+/* =====================================================================
+   4) Componentes reutilizables
+   ===================================================================== */
+/* Encabezado de página */
 .page-header {
     text-align: center;
     margin: 8px 0 18px;
@@ -216,43 +279,66 @@ body {
     border-radius: 18px;
 }
 
-/* Filtros */
+/* Filtros (inputs arriba del listado) */
+/* Filtros: que los selects NO ocupen todo el ancho */
 .filters {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
+    align-items: center;
 }
 
-    .filters input, .filters select, .filters button {
-        padding: 10px;
-        border-radius: 10px;
-        border: 1px solid #e5e7eb;
-        font-size: 14px;
-        background: #fff;
+    .filters select,
+    .filters input {
+        width: auto; /* anula el 100% global */
+        flex: 0 1 280px; /* ancho base ~280px, se puede encoger/crecer */
+        min-width: 180px;
+        max-width: 340px;
     }
 
     .filters button {
-        background: #2e7d32;
-        color: #fff;
-        border: none;
-        cursor: pointer;
+        flex: 0 0 auto; /* el botón solo su tamaño */
     }
 
-        .filters button:hover {
-            filter: brightness(.95);
-        }
+/* En móvil que se apilen a 100% */
+@media (max-width: 768px) {
+    .filters select,
+    .filters input,
+    .filters button {
+        flex: 1 1 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+}
 
-/* Tabla limpia */
-.table-wrap {
+
+/* Envoltura de tablas “grandes” */
+.table-wrap,
+.table-wrapper { /* ← alias unificados */
     background: #fff;
     border-radius: 14px;
     padding: 18px;
     box-shadow: 0 10px 24px rgba(0,0,0,.08);
 }
 
-/* Hace a las tablas �scrollables� en pantallas chicas sin romper ancho */
+/* Estilos base de todas las tablas de la app (evita “globales” peligrosos) */
+.page table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .95rem;
+}
+
+.page th, .page td {
+    padding: 10px;
+    border-bottom: 1px solid #eef2f7;
+    text-align: left;
+    vertical-align: top;
+}
+
+.page th {
+    background: #f8fafc;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+/* Tabla “scrollable” en pantallas chicas: aplicar class="table-clean" */
 .table-clean {
     width: 100%;
     border-collapse: collapse;
@@ -271,7 +357,6 @@ body {
         padding: 12px 10px;
         border-bottom: 1px solid #eef2f7;
         text-align: left;
-        vertical-align: top;
     }
 
     .table-clean th {
@@ -280,7 +365,7 @@ body {
         font-weight: 600;
     }
 
-/* Badges / Chips */
+/* Chips / badges */
 .badge {
     padding: 6px 10px;
     border-radius: 999px;
@@ -302,6 +387,11 @@ body {
 .badge-green {
     background: #dcfce7;
     color: #166534;
+}
+
+.badge-gray {
+    background: #e5e7eb;
+    color: #374151;
 }
 
 .chip {
@@ -333,6 +423,15 @@ body {
     }
 /* No Aplica */
 
+.pill {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #0f172a;
+    font-size: .85rem;
+}
+
 /* Barra de progreso */
 .progress {
     background: #e5e7eb;
@@ -350,7 +449,7 @@ body {
         height: 100%;
     }
 
-/* Grid de estad�sticas (cabeceras del Detalle) */
+/* Grid de estadísticas (cabeceras del Detalle) */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(180px,1fr));
@@ -376,7 +475,7 @@ body {
         color: #111827;
     }
 
-/* Tabs (para �Agregar requisito�: Manual / BCN / PDF) */
+/* Tabs reutilizables */
 .tabs {
     display: flex;
     gap: 8px;
@@ -397,10 +496,29 @@ body {
         border-color: #0ea5e9;
     }
 
-/* Utilidades menores */
+/* Utilidades */
 .text-muted {
     color: #64748b !important;
 }
+
+.muted {
+    color: #6b7280;
+}
+
+/* Botones (OJO: .btn afecta Bootstrap; mantenido por compatibilidad con tus vistas) */
+.btn {
+    border: none;
+    background: #16a34a;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+    .btn.gray {
+        background: #e5e7eb;
+        color: #111827;
+    }
 
 .btn-green {
     background: #16a34a;
@@ -420,23 +538,48 @@ body {
     border: 1px solid #2e7d32;
     border-radius: 10px;
     padding: 8px 12px;
+    text-decoration: none;
 }
 
     .btn-outline-green:hover {
         filter: brightness(.98);
     }
 
-/* =========================================================
-   4) Ajustes espec�ficos
-   ========================================================= */
-
-/* FullCalendar dentro de tarjetas */
-.fc .fc-scrollgrid, .fc .fc-scroller-harness {
-    background: #fff;
-    border-radius: 10px;
+/* Campos comunes */
+textarea {
+    width: 100%;
+    min-height: 68px;
+    resize: vertical;
 }
 
-/* Links en tablas de evidencias */
+input[type="text"], textarea, select, input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+}
+
+/* Varios */
+.actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.top-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.item-detalle {
+    white-space: pre-wrap;
+    line-height: 1.35;
+}
+
+/* Enlaces en tablas de evidencias */
 .table-clean a {
     text-decoration: none;
     color: #0d6efd;
@@ -446,7 +589,83 @@ body {
         text-decoration: underline;
     }
 
-/* Breakpoints para �respirar� mejor en m�viles */
+/* =====================================================================
+   5) Estilos específicos para la página de Login (Index.cshtml)
+   — Escopados a .plain-content para no contaminar la app con sidebar
+   ===================================================================== */
+.plain-content .container {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.plain-content .calendar-box,
+.plain-content .login-box {
+    width: 50%;
+    height: 80%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.plain-content .calendar-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    text-align: center;
+    width: 90%;
+}
+
+.plain-content .login-box {
+    background: #eaf6ff;
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+}
+
+.plain-content .login-form {
+    background: #fff;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.15);
+    width: 80%;
+    max-width: 300px;
+    text-align: center;
+}
+
+    .plain-content .login-form input {
+        width: 100%;
+        padding: 8px;
+        margin: 8px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .plain-content .login-form button {
+        background-color: #007bff;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+        .plain-content .login-form button:hover {
+            background-color: #0056b3;
+        }
+
+/* =====================================================================
+   6) FullCalendar (dentro de tarjetas)
+   ===================================================================== */
+.fc .fc-scrollgrid, .fc .fc-scroller-harness {
+    background: #fff;
+    border-radius: 10px;
+}
+
+/* =====================================================================
+   7) Breakpoints (respirar mejor en móviles)
+   ===================================================================== */
 @media (max-width: 768px) {
     .content {
         padding: 12px;
@@ -460,31 +679,50 @@ body {
         font-size: 1.25rem;
     }
 }
-/* --- P�gina fluida (sin tope) para que crezca con la pantalla/zoom --- */
-.page--fluid {
-    width: 100%; /* ocupa todo el ancho disponible del �rea .content */
-    max-width: none; /* sin l�mite superior */
-    margin: 0 auto;
-    padding: 16px clamp(12px, 2vw, 28px); /* padding responsivo agradable */
+/* --- Espaciados claros entre bloques principales --- */
+
+/* 1) Filtros → bloque siguiente (tabla/card) */
+.filters,
+.filters--compact {
+    margin-bottom: 20px; /* separación “normal” */
 }
 
-    /* Asegura que las �burbujas� internas realmente llenen el ancho */
-    .page--fluid .table-wrap,
-    .page--fluid .table-wrapper,
-    .page--fluid .card {
-        width: 100%;
-        max-width: none;
+    /* Si alguna vista resetea márgenes, forzamos el gap por adyacencia */
+    .filters + .table-wrap,
+    .filters + .table-wrapper,
+    .filters + .card {
+        margin-top: 14px;
     }
 
-/* ===== OVERRIDE: p�ginas fluidas sin tope de ancho ===== */
-.content > .page.page--fluid {
-    max-width: none !important; /* quita el l�mite de 1400px */
+/* 2) Encabezado del detalle (card con el título) → tabla de ítems */
+.card.header { /* <div class="card header"> */
+    margin-bottom: 22px; /* más aire bajo el título */
 }
 
-    /* asegura que los bloques principales llenen el ancho disponible */
-    .content > .page.page--fluid > .card,
-    .content > .page.page--fluid > .table-wrap,
-    .content > .page.page--fluid > .table-wrapper {
-        width: 100% !important;
-        max-width: none;
+    .card.header + .card, /* por si el card de abajo no tiene margen */
+    .page-header + .card {
+        margin-top: 16px;
     }
+
+/* Ajuste en pantallas pequeñas: un poco menos de separación */
+@media (max-width: 768px) {
+    .filters,
+    .filters--compact {
+        margin-bottom: 14px;
+    }
+
+    .card.header {
+        margin-bottom: 16px;
+    }
+}
+
+/* Sin subrayado en Cerrar sesión y en los iconos de Acciones */
+.logout a,
+.actions a {
+    text-decoration: none;
+}
+
+/* Evita que .table-clean a:hover subraye los iconos dentro de Acciones */
+.table-clean .actions a:hover {
+    text-decoration: none;
+}
