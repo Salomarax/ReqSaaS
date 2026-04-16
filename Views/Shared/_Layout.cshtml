@@ -4,22 +4,23 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] - HU1_Date</title>
+    <title>@ViewData["Title"] - ReqSaaS</title>
 
     <!-- CSS: Bootstrap primero, luego tus estilos -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <!-- Fuente (opcional, pero recomendada por site.css) -->
+    <!-- Fuente (opcional, usada por site.css) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 
     @RenderSection("Styles", required: false)
 </head>
 <body>
     @{
-        var useSideBar = ViewData["UseSideBar"] is true;  // <— misma clave que usas en las vistas
+        // Default: true (muestra la barra si la vista no define nada)
+        var UseSideBar = ViewData["UseSideBar"] as bool? ?? true;
     }
 
-    @if (useSideBar)
+    @if (UseSideBar)
     {
         <!-- MODO SIDEBAR (app) -->
         <div class="app-shell">
@@ -31,7 +32,7 @@
     }
     else
     {
-        <!-- MODO PLANO (login/landing, sin navbar/footers) -->
+        <!-- MODO PLANO (login/landing, sin sidebar) -->
         <div class="plain-shell">
             <main class="plain-content">
                 @RenderBody()

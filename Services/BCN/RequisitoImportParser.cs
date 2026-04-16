@@ -71,7 +71,7 @@ public static class RequisitoImportParser
         var pubStr = GetAttrFirst(xdoc, "fechaPublicacion")
                       ?? GetFirst(xdoc, "FechaPublicacion", "fechaPublicacion");
 
-        var fechaPromulgacion = TryParseDate(promStr) ?? TryParseDate(pubStr); // usa promulgación; si no, publicación
+        var fechaPromulgacion = TryParseDate(promStr) ?? TryParseDate(pubStr); // usa promulgación,si no, publicación
 
         var descripcion =
                             GetFirst(xdoc, "Resumen", "Extracto")                              // si existe

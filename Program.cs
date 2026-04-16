@@ -24,7 +24,7 @@ builder.Services.AddAntiforgery(o => o.HeaderName = "RequestVerificationToken");
 // === EF Core + PostgreSQL conexión a BBDD ===
 var cs = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Si está vacío aquí, no llegó desde appsettings, User Secrets ni variables de entorno.
+
 if (string.IsNullOrWhiteSpace(cs))
     throw new InvalidOperationException(
         "No se encontró ConnectionStrings:DefaultConnection en la configuración. " +
@@ -43,13 +43,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     }
 });
 
-// === Cookies de autenticación (Opción A: vida corta y sin sliding) ===
+// === Cookies de autenticación ===
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
     {
         o.LoginPath = "/Home/Index";                 // pantalla de login
         o.LogoutPath = "/Home/Logout";               // debe ser POST en el controlador
-        o.AccessDeniedPath = "/Home/Index";          // o una vista de acceso denegado dedicada
+        o.AccessDeniedPath = "/Home/Index";        
 
         // Vida corta y SIN sliding → exige re-login con frecuencia
         o.ExpireTimeSpan = TimeSpan.FromMinutes(15);

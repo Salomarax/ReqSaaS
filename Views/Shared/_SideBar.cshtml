@@ -1,20 +1,35 @@
 ﻿@{
     var action = (string?)ViewContext.RouteData.Values["action"];
     var controller = (string?)ViewContext.RouteData.Values["controller"];
-    Func<string, string, string> active = (a, c) =>
-        string.Equals(controller, c, System.StringComparison.OrdinalIgnoreCase)
-        && string.Equals(action, a, System.StringComparison.OrdinalIgnoreCase) ? "active" : "";
+
+    bool IsActive(string a, string c) =>
+        string.Equals(controller, c, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(action, a, StringComparison.OrdinalIgnoreCase);
+
+    string ActiveClass(string a, string c) => IsActive(a, c) ? "active" : "";
+
     var canCrud = User.HasClaim("nivel", "2") || User.HasClaim("nivel", "3");
 }
 <aside class="sidebar">
-    <div class="brand">ReqSaaS <small>Plataforma de Requisitos</small></div>
+    <div class="brand">ReqSaaS <small> Gestión de requisitos.</small></div>
+
     <nav class="nav">
-        <a class="@active("reqView", "Home")" asp-controller="Home" asp-action="reqView">📊 Resumen</a>
+        <a class="@ActiveClass("ReqView", "Home")"
+           asp-controller="Home" asp-action="ReqView"
+           aria-current="@(IsActive("ReqView", "Home") ? "page" : null)">
+            📊 Resumen
+        </a>
+
         @if (canCrud)
         {
-            <a class="@active("AddReq", "Home")" asp-controller="Home" asp-action="AddReq">➕ Agregar requisito</a>
+            <a class="@ActiveClass("AddReq", "Home")"
+               asp-controller="Home" asp-action="AddReq"
+               aria-current="@(IsActive("AddReq", "Home") ? "page" : null)">
+                ➕ Agregar requisito
+            </a>
         }
     </nav>
+
     <hr />
 
     @if (User?.Identity?.IsAuthenticated == true)
@@ -22,7 +37,7 @@
         <div class="logout">
             <form asp-controller="Home" asp-action="Logout" method="post">
                 @Html.AntiForgeryToken()
-                <button type="submit">Cerrar sesión</button>
+                <button type="submit" class="logout-btn">Cerrar sesión</button>
             </form>
         </div>
     }

@@ -14,12 +14,12 @@ namespace ReqSaaS_1.Data.Entities
         public string IdOrganismo { get; set; } = null!;   
 
         [Column("Clave_hash")]
-        public string ClaveHash { get; set; } = null!;     // <- requerido en BD
+        public string ClaveHash { get; set; } = null!;    
 
         [Column("Nombre")]
-        public string Nombre { get; set; } = string.Empty; // si en BD permite null, cámbialo a string?
+        public string Nombre { get; set; } = string.Empty; 
 
         [Column("ID_nivel")]
-        public int? IdNivel { get; set; }                  // si tu FK es NOT NULL, usa int
+        public int? IdNivel { get; set; }                  
     }
 }

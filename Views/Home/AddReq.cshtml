@@ -1,14 +1,17 @@
-﻿@{
+﻿@using ReqSaaS_1.Data.Entities
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model ReqSaaS_1.Models.CreateRequirementVM
+
+@{
     ViewData["Title"] = "Agregar requisito";
-    ViewData["NoLayout"] = true;
     Layout = "_Layout";
-    ViewData["UseSidebar"] = true;
+    // Activa el layout con sidebar
+    ViewData["UseSideBar"] = true;
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 
-
-<!-- Form “fuente” para extraer el AntiForgery token (fuera de otros forms) -->
+<!-- Form “fuente” para extraer el AntiForgery token (para llamadas fetch POST) -->
 <form id="af-form" method="post" style="display:none">
     @Html.AntiForgeryToken()
 </form>
@@ -17,226 +20,425 @@
     <div class="tabs">
         <button class="tab active" data-pane="manual">Manual</button>
         <button class="tab" data-pane="bcn">Importar desde BCN</button>
-        <button class="tab" data-pane="pdf" disabled>Cargar documento</button>
+        <!-- <button class="tab" data-pane="pdf" disabled>Cargar documento</button>-->
     </div>
-
 
     <!-- MANUAL -->
     <div class="page page--fluid">
-        <div id="pane-manual" class="card ">
-        <div class="section-title">
-            <h3>Información General</h3>
+        <div id="pane-manual" class="card">
+            <div class="section-title">
+                <h3>Información General</h3>
+            </div>
+            <div class="hint">Completa todos los campos requeridos.</div>
+
+            <!-- POST del formulario manual (en HomeController.CreateRequirement) -->
+            <form id="form-create-requirement" asp-action="CreateRequirement" asp-controller="Home" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="grid">
+                    <div>
+                        <label>Título del Requisito *</label>
+                        <input type="text" name="Titulo" placeholder="Ej: Cumplimiento de WCAG 2.1 AA para accesibilidad web" required />
+                    </div>
+
+                    <div>
+                        <label>Entidad emisora *</label>
+                        <input type="text" name="Entidad" placeholder="Ej: Ministerio Secretaría General de la Presidencia / BCN" required />
+                    </div>
+
+                    <div style="grid-column:1/-1">
+                        <label>Descripción *</label>
+                        <textarea name="Descripcion" placeholder="Describe el requisito, alcance y objetivos..." required></textarea>
+                    </div>
+
+                    <div>
+                        <label>Tipo de requisito *</label>
+                        <select asp-for="TipoId"
+                                asp-items="@(new SelectList(Model.Tipos, "IdTipo", "Nombre", Model.TipoId))"
+                                required>
+                            <option value="">-- Seleccionar --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ÍTEMS/ARTÍCULOS DINÁMICOS -->
+                <div class="section-subtitle" style="margin-top:16px">Ítems / Artículos del requisito</div>
+                <div id="itemsWrap">
+                    <ul id="itemsList" class="items-list"></ul>
+
+                    <div class="items-actions" style="display:flex;gap:12px;align-items:center;margin-top:8px">
+                        <button type="button" class="btn outline" id="addItemBtn">Agregar ítem</button>
+                        <span class="hint">Puedes añadir todos los ítems necesarios.</span>
+                    </div>
+                </div>
+
+                <!-- Template oculto de fila -->
+                <script type="text/template" id="itemRowTpl">
+                    <li class="item-row">
+                      <span class="dragpad" aria-hidden="true">▦</span>
+                      <input type="text" class="item-input" placeholder="Ej: Art. 5 — Requisitos de accesibilidad" />
+                      <button type="button" class="icon-btn remove-item" title="Eliminar ítem" aria-label="Eliminar ítem">✕</button>
+                    </li>
+                </script>
+
+                <div style="display:flex;gap:8px;margin-top:14px;">
+                    <button type="submit" class="btn">Guardar requisito</button>
+                    <a class="btn gray" href='@Url.Action("ReqView", "Home")'>Cancelar</a>
+                </div>
+            </form>
         </div>
-        <div class="hint">Completa todos los campos requeridos.</div>
-
-        <form asp-action="CreateRequirement" asp-controller="Home" method="post">
-            @Html.AntiForgeryToken()
-            <div class="grid">
-                <div>
-                    <label>Título del Requisito *</label>
-                    <input type="text" name="Titulo" placeholder="Ej: Cumplimiento de WCAG 2.1 AA para accesibilidad web" required />
-                </div>
-                <div>
-                    <label>Entidad emisora *</label>
-                    <input type="text" name="Entidad" placeholder="Ej: Ministerio Secretaría General de la Presidencia / BCN" required />
-                </div>
-
-                <div style="grid-column:1/-1">
-                    <label>Descripción *</label>
-                    <textarea name="Descripcion" placeholder="Describe el requisito, alcance y objetivos..." required></textarea>
-                </div>
-
-                <div>
-                    <label>Tipo de requisito *</label>
-                    <select name="Tipo" required>
-                        <option value="">-- Seleccionar --</option>
-                        <option>Ley</option>
-                        <option>Norma</option>
-                        <option>Regulación</option>
-                        <option>Decreto</option>
-                        <option>Otro</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Ítem (artículo o requerimiento a cumplir) *</label>
-                    <input type="text" name="Item" placeholder="Ej: Art. 5 — Requisitos de accesibilidad" required />
-                </div>
-            </div>
-
-            <div style="display:flex;gap:8px;margin-top:14px;">
-                <button type="submit" class="btn">Guardar requisito</button>
-                <a class="btn gray" href='@Url.Action("ReqView", "Home")'>Cancelar</a>
-            </div>
-        </form>
     </div>
-    </div>
-
 
     <!-- BCN -->
     <div class="page page--fluid">
-    <div id="pane-bcn" class="card" style="display:none">
-        <div class="section-title">
-            <span>🏛️</span><h3>Importar desde BCN</h3>
-        </div>
-        <div class="hint">Busca por ID de norma (por ahora) y trae el registro para importarlo.</div>
-
-        <form method="get" id="form-buscar-bcn" onsubmit="return false;">
-            <div class="grid g2">
-                <div>
-                    <label>Buscar en BCN</label>
-                    <input id="q" type="text" placeholder="Ej: 244118" />
-                </div>
-                <div style="display:flex;align-items:flex-end;gap:8px">
-                    <button type="button" class="btn" onclick="buscarBCN()">Buscar</button>
-                    <button type="button" class="btn gray" onclick="limpiarBCN()">Limpiar</button>
-                </div>
+        <div id="pane-bcn" class="card" style="display:none">
+            <div class="section-title">
+                <span>🏛️</span><h3>Importar desde Biblioteca del Congreso Nacional de Chile (BCN)</h3>
             </div>
-        </form>
+            <div class="hint">Busca por ID de norma y trae el registro para importarlo.</div>
 
-        <div style="margin-top:14px">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Título</th>
-                        <th>Entidad</th>
-                        <th>Tipo</th>
-                        <th>Código/ID</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="bcn-results">
-                    <tr><td colspan="5" class="hint">Sin resultados. Realiza una búsqueda.</td></tr>
-                </tbody>
-            </table>
+            <form method="get" id="form-buscar-bcn" onsubmit="return false;">
+                <div class="grid g2">
+                    <div>
+                        <div class="input-with-help" style="display:flex;gap:8px;align-items:center">
+                            <input id="q" type="text" inputmode="numeric" pattern="^[0-9]+$" placeholder="Ej: 244118" aria-describedby="idnormaHelpText" />
+                            <!-- Ícono de ayuda que abrirá el POPOVER -->
+                            <button type="button"
+                                    class="input-group-text"
+                                    id="helpIdNorma"
+                                    aria-expanded="false"
+                                    aria-controls="popoverIdNorma"
+                                    aria-label="Ayuda sobre IDNorma"
+                                    data-bs-toggle="popover"
+                                    data-bs-trigger="focus"
+                                    data-bs-placement="bottom"
+                                    data-bs-html="true"
+                                    title="Cómo ubicar el IDNorma"
+                                    data-bs-content="">
+                                <span aria-hidden="true">i</span>
+                                <span class="visually-hidden">Ayuda sobre IDNorma</span>
+                            </button>
+                        </div>
+                        <div id="idnormaHelpText" class="visually-hidden">Ingresa el identificador numérico de la norma en BCN.</div>
+                    </div>
+
+                    <div style="display:flex;align-items:flex-end;gap:8px">
+                        <button type="button" class="btn" onclick="buscarBCN()">Buscar</button>
+                        <button type="button" class="btn gray" onclick="limpiarBCN()">Limpiar</button>
+                    </div>
+                </div>
+            </form>
+
+            <div style="margin-top:14px">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Entidad</th>
+                            <th>Tipo</th>
+                            <th>Código/ID</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="bcn-results">
+                        <tr><td colspan="5" class="hint">Sin resultados. Realiza una búsqueda.</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-    </div>
 
+    <!-- PDF 
     <div class="page page--fluid">
-    <!-- PDF -->
-    <div id="pane-pdf" class="card" style="display:none">
-        <div class="section-title">
-            <span>📎</span><h3>Cargar documento (PDF)</h3>
-        </div>
-        <div class="hint">Sube un PDF y extraeremos automáticamente título, entidad, tipo, ítem y descripción.</div>
+        <div id="pane-pdf" class="card" style="display:none">
+            <div class="section-title">
+                <span>📎</span><h3>Cargar documento (PDF)</h3>
+            </div>
+            <div class="hint">Sube un PDF y extraeremos automáticamente título, entidad, tipo, ítem y descripción.</div>
 
-        <form asp-action="UploadDocument" asp-controller="Home" method="post" enctype="multipart/form-data">
-            @Html.AntiForgeryToken()
-            <div class="grid">
-                <div>
-                    <label>Archivo PDF *</label>
-                    <input type="file" name="Archivo" accept="application/pdf" required />
+            <form asp-action="UploadDocument" asp-controller="Home" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="grid">
+                    <div>
+                        <label>Archivo PDF *</label>
+                        <input type="file" name="Archivo" accept="application/pdf" required />
+                    </div>
                 </div>
-            </div>
-            <div style="margin-top:12px">
-                <button type="submit" class="btn">Procesar PDF</button>
-                <a class="btn gray" href='@Url.Action("ReqView", "Home")'>Cancelar</a>
-            </div>
-        </form>
-        <p class="hint" style="margin-top:10px">⚠️ Por ahora solo sube y guarda; la extracción la conectamos después.</p>
-    </div>
+                <div style="margin-top:12px">
+                    <button type="submit" class="btn">Procesar PDF</button>
+                    <a class="btn gray" href='@Url.Action("ReqView", "Home")'>Cancelar</a>
+                </div>
+            </form>
+            <p class="hint" style="margin-top:10px">⚠️ Por ahora solo sube y guarda; la extracción la conectamos después.</p>
+        </div>
+    </div>-->
 </div>
-</div>
+
 
 @section Scripts {
     <script>
-        /* ---------- Tabs ---------- */
-        document.querySelectorAll('.tab').forEach(t=>{
-          t.addEventListener('click',()=>{
-            document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-            t.classList.add('active');
-            const pane = t.dataset.pane;
-            document.querySelectorAll('[id^="pane-"]').forEach(p=>p.style.display='none');
-            document.getElementById('pane-'+pane).style.display='block';
+        document.addEventListener('DOMContentLoaded', () => {
+          /* ---------- Tabs ---------- */
+          document.querySelectorAll('.tab').forEach(t => {
+            t.addEventListener('click', () => {
+              document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+              t.classList.add('active');
+              const pane = t.dataset.pane;
+              document.querySelectorAll('[id^="pane-"]').forEach(p => p.style.display = 'none');
+              const target = document.getElementById('pane-' + pane);
+              if (target) target.style.display = 'block';
+            });
           });
-        });
 
-        /* ---------- BCN: Buscar / Limpiar ---------- */
-        async function buscarBCN(){
-          const q = (document.getElementById('q').value || '').trim();
-          const tbody = document.getElementById('bcn-results');
+          /* ---------- Ítems dinámicos (Manual) ---------- */
+          (function () {
+            const list  = document.getElementById('itemsList');
+            const addBtn = document.getElementById('addItemBtn');
+            const tplHtml = (document.getElementById('itemRowTpl')?.innerHTML || '').trim();
+            if (!list || !tplHtml) return;
 
-          if(!q || !/^\d+$/.test(q)){
-            tbody.innerHTML = `<tr><td colspan="5" class="hint">Ingresa un ID de norma numérico.</td></tr>`;
-            return;
-          }
-
-          tbody.innerHTML = `<tr><td colspan="5">Buscando “${q}”...</td></tr>`;
-
-          try{
-            const resp = await fetch(`/import/bcn/search?q=${encodeURIComponent(q)}`, { credentials:'same-origin' });
-            if(!resp.ok){
-              const txt = await resp.text();
-              tbody.innerHTML = `<tr><td colspan="5" style="color:#b91c1c">Error ${resp.status}: ${txt || 'Falló la búsqueda.'}</td></tr>`;
-              return;
+            function renumber() {
+              const inputs = list.querySelectorAll('.item-input');
+              inputs.forEach((inp, idx) => {
+                inp.name = `Items[${idx}]`;
+                inp.id   = `Items_${idx}`;
+                inp.required = true;
+              });
             }
 
-            const data = await resp.json(); // [{ normaIDBCN, titulo, entidad, tipo }]
-            if(!Array.isArray(data) || data.length === 0){
-              tbody.innerHTML = `<tr><td colspan="5" class="hint">Sin resultados para “${q}”.</td></tr>`;
-              return;
+            function addRow(value = '') {
+              const holder = document.createElement('div');
+              holder.innerHTML = tplHtml;
+              const li = holder.firstElementChild;
+              const input = li.querySelector('.item-input');
+              input.value = value;
+              list.appendChild(li);
+              renumber();
+              setTimeout(() => input.focus(), 0);
             }
 
-            const rows = data.map(x => `
-              <tr>
-                <td>${x.titulo ?? x.Titulo ?? ''}</td>
-                <td>${x.entidad ?? x.Entidad ?? ''}</td>
-                <td>${x.tipo ?? x.Tipo ?? ''}</td>
-                <td>${x.normaIDBCN ?? x.NormaIDBCN ?? ''}</td>
-                <td class="actions">
-                  <button type="button" class="btn" data-add-norma="${x.normaIDBCN ?? x.NormaIDBCN}">Agregar</button>
-                </td>
-              </tr>`).join('');
+            function removeRow(btn) {
+              const li = btn.closest('.item-row');
+              if (!li) return;
+              li.remove();
+              renumber();
+            }
 
-            tbody.innerHTML = rows;
-          }catch(e){
-            tbody.innerHTML = `<tr><td colspan="5" style="color:#b91c1c">Error al buscar: ${e?.message ?? e}</td></tr>`;
-          }
-        }
+            addBtn?.addEventListener('click', () => addRow());
 
-        function limpiarBCN(){
-          document.getElementById('q').value = '';
-          document.getElementById('bcn-results').innerHTML =
-            `<tr><td colspan="5" class="hint">Sin resultados. Realiza una búsqueda.</td></tr>`;
-        }
-
-        /* ---------- POST Agregar (delegación) ---------- */
-        // Construimos una URL base válida con id=0 y luego reemplazamos el sufijo /0 por /{id}
-        const postBase = '@Url.Action("SaveRequisito", "Import", new { idNorma = 0 })'; // ej: /import/bcn/requisitos/0
-        const postPrefix = postBase.endsWith('/0') ? postBase.slice(0, -2) : postBase.replace(/0$/, '');
-        const antiForgery = (document.querySelector('#af-form input[name="__RequestVerificationToken"]') || {}).value || '';
-
-        document.addEventListener('click', async (ev) => {
-          const btn = ev.target.closest('[data-add-norma]');
-          if (!btn) return;
-
-          const id = btn.getAttribute('data-add-norma');
-          if (!id) return;
-
-          const url = `${postPrefix}/${encodeURIComponent(id)}`;
-
-          try {
-            const res = await fetch(url, {
-              method: 'POST',
-              credentials: 'same-origin',
-              headers: { 'RequestVerificationToken': antiForgery }
+            list.addEventListener('click', (e) => {
+              const btn = e.target.closest('.remove-item');
+              if (btn) removeRow(btn);
             });
 
-            if (!res.ok) {
-              const txt = await res.text();
-              let detail = txt; try { const j = JSON.parse(txt); detail = j.detail || j.error || txt; } catch {}
-              alert('Error al importar: ' + res.status + (detail ? (' — ' + detail) : ''));
+            list.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' && e.target.classList.contains('item-input')) {
+                e.preventDefault();
+                addRow();
+              }
+            });
+
+            if (list.children.length === 0) addRow();
+          })();
+
+          /* ---------- BCN: Buscar / Limpiar ---------- */
+          window.buscarBCN = async function () {
+            const qEl = document.getElementById('q');
+            const q = (qEl?.value || '').trim();
+            const tbody = document.getElementById('bcn-results');
+
+            if (!tbody) return;
+
+            if (!q || !/^\d+$/.test(q)) {
+              tbody.innerHTML = `<tr><td colspan="5" class="hint">Ingresa un ID de norma numérico.</td></tr>`;
               return;
             }
 
-            const json = await res.json();
-            alert('Importado: ' + (json?.titulo ?? ('ID ' + (json?.requisitoId ?? ''))));
-            // Si quieres redirigir al resumen:
-            // window.location = '@Url.Action("ReqView", "Home")';
-          } catch (e) {
-            console.error(e);
-            alert('Error de red al importar (ver consola).');
-          }
-        });
+            tbody.innerHTML = `<tr><td colspan="5">Buscando “${q}”...</td></tr>`;
+
+            try {
+              const resp = await fetch(`/import/bcn/search?q=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
+              if (!resp.ok) {
+                const txt = await resp.text();
+                tbody.innerHTML = `<tr><td colspan="5" style="color:#b91c1c">Error ${resp.status}: ${txt || 'Falló la búsqueda.'}</td></tr>`;
+                return;
+              }
+
+              const data = await resp.json();
+              if (!Array.isArray(data) || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="hint">Sin resultados para “${q}”.</td></tr>`;
+                return;
+              }
+
+              const rows = data.map(x => `
+                <tr>
+                  <td>${x.titulo ?? x.Titulo ?? ''}</td>
+                  <td>${x.entidad ?? x.Entidad ?? ''}</td>
+                  <td>${x.tipo ?? x.Tipo ?? ''}</td>
+                  <td>${x.normaIDBCN ?? x.NormaIDBCN ?? ''}</td>
+                  <td class="actions">
+                    <button type="button" class="btn" data-add-norma="${x.normaIDBCN ?? x.NormaIDBCN}">Agregar</button>
+                  </td>
+                </tr>`).join('');
+
+              tbody.innerHTML = rows;
+            } catch (e) {
+              tbody.innerHTML = `<tr><td colspan="5" style="color:#b91c1c">Error al buscar: ${e?.message ?? e}</td></tr>`;
+            }
+          };
+
+          window.limpiarBCN = function () {
+            const q = document.getElementById('q');
+            const tbody = document.getElementById('bcn-results');
+            if (q) q.value = '';
+            if (tbody) {
+              tbody.innerHTML = `<tr><td colspan="5" class="hint">Sin resultados. Realiza una búsqueda.</td></tr>`;
+            }
+          };
+
+          // Filtro suave: solo números
+          (function () {
+            const q = document.getElementById('q');
+            if (!q) return;
+            q.addEventListener('input', function () {
+              const cursor = this.selectionStart;
+              this.value = this.value.replace(/\D+/g, '');
+              try { this.setSelectionRange(cursor, cursor); } catch {}
+            });
+          })();
+
+          /* ---------- POST Agregar (delegación) ---------- */
+          const postBase = '@Url.Action("SaveRequisito", "Import", new { idNorma = 0 })';
+          const postPrefix = postBase.endsWith('/0') ? postBase.slice(0, -2) : postBase.replace(/0$/, '');
+          const antiForgery = (document.querySelector('#af-form input[name="__RequestVerificationToken"]') || {}).value || '';
+
+          document.addEventListener('click', async (ev) => {
+            const btn = ev.target.closest('[data-add-norma]');
+            if (!btn) return;
+
+            const id = btn.getAttribute('data-add-norma');
+            if (!id) return;
+
+            const url = `${postPrefix}/${encodeURIComponent(id)}`;
+
+            try {
+              const res = await fetch(url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'RequestVerificationToken': antiForgery }
+              });
+
+              if (!res.ok) {
+                const txt = await res.text();
+                let detail = txt; try { const j = JSON.parse(txt); detail = j.detail || j.error || txt; } catch {}
+                alert('Error al importar: ' + res.status + (detail ? (' — ' + detail) : ''));
+                return;
+              }
+
+              const json = await res.json();
+              const titulo = (json?.titulo ?? '').trim();
+              const tituloCorto = titulo.length > 120 ? titulo.slice(0, 117) + '…' : titulo;
+
+              alert(
+                `✅ Requisito importado\n\n` +
+                `Título: ${tituloCorto}\n` +
+                `Artículos nuevos: ${json?.agregados ?? 0} / Total: ${json?.totalArticulos ?? 0}\n` +
+                `Cumplimiento: ${json?.porcentaje ?? 0}%`
+              );
+            } catch (e) {
+              console.error(e);
+              alert('Error de red al importar (ver consola).');
+            }
+          });
+
+          /* ---------- Ayuda IDNorma: Popover ---------- */
+          (function () {
+            const helpBtn = document.getElementById('helpIdNorma');
+            if (!helpBtn) return;
+
+            const popHtml = `
+              <div style="max-width:380px">
+                <p class="mb-2">En la ficha de la norma de Ley Chile, busca el <strong>Identificador</strong> (número entero).</p>
+                <img src="/img/bcn-idnorma.png"
+                     alt="Ubicación del ID de la norma en Ley Chile"
+                     style="width:100%;height:auto;border:1px solid #e5e7eb;border-radius:.375rem;">
+                <p class="mt-2 mb-0"><small>Copia ese número y pégalo aquí en <em>IDNorma</em>.</small></p>
+              </div>
+            `;
+
+            const hasBootstrap = !!(window.bootstrap && bootstrap.Popover);
+
+            if (hasBootstrap) {
+              const pop = new bootstrap.Popover(helpBtn, {
+                container: 'body',
+                html: true,
+                placement: 'bottom',
+                trigger: 'focus',
+                content: popHtml,
+                title: 'Cómo ubicar el IDNorma'
+              });
+
+              document.addEventListener('click', (e) => { if (!helpBtn.contains(e.target)) pop.hide(); });
+              helpBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); helpBtn.focus(); }
+              });
+
+            } else {
+              // Fallback sin Bootstrap
+              let popEl = document.getElementById('popoverIdNorma');
+              if (!popEl) {
+                popEl = document.createElement('div');
+                popEl.id = 'popoverIdNorma';
+                popEl.setAttribute('role', 'dialog');
+                popEl.setAttribute('aria-modal', 'false');
+                popEl.setAttribute('aria-hidden', 'true');
+                Object.assign(popEl.style, {
+                  position: 'absolute', display: 'none', maxWidth: '380px', background: '#fff',
+                  border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 8px 24px rgba(15,23,42,0.12)',
+                  padding: '12px', zIndex: 1000
+                });
+                popEl.innerHTML = `<div style="font-weight:600;margin-bottom:6px">Cómo ubicar el IDNorma</div>${popHtml}`;
+                document.body.appendChild(popEl);
+              }
+
+              function positionPopover() {
+                const r = helpBtn.getBoundingClientRect();
+                const top = r.bottom + window.scrollY + 8;
+                const left = r.left + window.scrollX;
+                popEl.style.top = top + 'px';
+                popEl.style.left = left + 'px';
+              }
+              function showPopover() {
+                positionPopover();
+                popEl.style.display = 'block';
+                popEl.setAttribute('aria-hidden', 'false');
+                helpBtn.setAttribute('aria-expanded', 'true');
+              }
+              function hidePopover() {
+                popEl.style.display = 'none';
+                popEl.setAttribute('aria-hidden', 'true');
+                helpBtn.setAttribute('aria-expanded', 'false');
+              }
+
+              let visible = false;
+              helpBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                visible ? hidePopover() : showPopover();
+                visible = !visible;
+              });
+              document.addEventListener('click', (e) => {
+                if (!visible) return;
+                if (!popEl.contains(e.target) && e.target !== helpBtn) { hidePopover(); visible = false; }
+              });
+              document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && visible) { hidePopover(); visible = false; (document.getElementById('q')||{}).focus?.(); }
+                if ((e.key === 'Enter' || e.key === ' ') && document.activeElement === helpBtn) { e.preventDefault(); helpBtn.click(); }
+              });
+              window.addEventListener('resize', () => { if (visible) positionPopover(); });
+              window.addEventListener('scroll', () => { if (visible) positionPopover(); }, { passive: true });
+            }
+          })();
+
+        }); // DOMContentLoaded
     </script>
 }

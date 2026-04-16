@@ -5,10 +5,14 @@ using ReqSaaS_1.Data;
 using ReqSaaS_1.Data.Entities;
 using ReqSaaS_1.Models;
 using ReqSaaS_1.Services.BCN;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
-using System.Xml.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace ReqSaaS_1.Controllers
 {
@@ -26,95 +30,93 @@ namespace ReqSaaS_1.Controllers
         }
 
         // =========================
-        // GET import/bcn/search?q=...
-        // (Proyecto: búsqueda por ID de norma)
+        // GET /import/bcn/search?q=...
         // =========================
         [HttpGet("search")]
         public async Task<IActionResult> Search([FromQuery] string q, CancellationToken ct)
         {
             var query = (q ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(query))
-                return BadRequest("Falta el parámetro q.");
+                return BadRequest("Ingresa un ID de norma.");
 
             if (!int.TryParse(query, out var idNorma))
-                return Json(Array.Empty<BCNSearchResultDto>());
+                return BadRequest("El ID de norma debe ser numérico.");
 
-            var xml = await _bcn.GetNormaXmlAsync(idNorma, ct);
-            if (xml is null) return Json(Array.Empty<BCNSearchResultDto>());
-
-            var dto = RequisitoImportParser.Parse(
-                idNorma,
-                xml,
-                $"https://www.leychile.cl/Consulta/obtxml?opt=7&idNorma={idNorma}"
-            );
-
-            // 👉 Componer el mismo título que usas al guardar
-            var numero = ExtraerNumeroNorma(xml);
-            var tituloFinal = ComposeTitulo(dto.Tipo, numero, dto.Titulo);
-
-            return Json(new[]
+            string? xml;
+            try
             {
-        new BCNSearchResultDto
-        {
-            NormaIDBCN = idNorma,
-            Titulo     = tituloFinal, // <-- devolvemos el compuesto
-            Entidad    = dto.Entidad,
-            Tipo       = dto.Tipo
-        }
-    });
+                xml = await _bcn.GetNormaXmlAsync(idNorma, ct);
+            }
+            catch
+            {
+                // 502 = error al hablar con el servicio externo
+                return StatusCode(502, "No se pudo contactar con BCN. Intenta de nuevo.");
+            }
+
+            if (string.IsNullOrWhiteSpace(xml))
+                return NotFound("No se encontró una norma con ese ID.");
+
+            try
+            {
+                var dto = RequisitoImportParser.Parse(
+                    idNorma,
+                    xml,
+                    $"https://www.leychile.cl/Consulta/obtxml?opt=7&idNorma={idNorma}"
+                );
+
+                var numero = ExtraerNumeroNorma(xml);
+                var tituloFinal = ComposeTitulo(dto.Tipo, numero, dto.Titulo);
+
+                return Json(new[]
+                {
+            new BCNSearchResultDto
+            {
+                NormaIDBCN = idNorma,
+                Titulo     = tituloFinal,
+                Entidad    = dto.Entidad,
+                Tipo       = dto.Tipo
+            }
+        });
+            }
+            catch (System.Xml.XmlException)
+            {
+                return BadRequest("BCN devolvió un XML inválido para ese ID.");
+            }
+            catch
+            {
+                return StatusCode(500, "No pudimos procesar la respuesta de BCN.");
+            }
         }
 
 
         // =========================
-        // POST import/bcn/requisitos/{idNorma}
+        // POST /import/bcn/requisitos/{idNorma}
         // Crea/actualiza Requisito + DetalleEvaluacion (uno por artículo)
         // =========================
         [HttpPost("/import/bcn/requisitos/{idNorma:int}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveRequisito(int idNorma, CancellationToken ct)
         {
-            // 0) Asegura organización (claim "rut")
+            // 0) Organismo desde claim "rut"
             var idOrganismo = User.FindFirst("rut")?.Value;
             if (string.IsNullOrWhiteSpace(idOrganismo))
                 return Unauthorized("Falta el claim 'rut' del usuario.");
 
-            // 1) Trae XML desde BCN
+            // 1) XML BCN
             var xml = await _bcn.GetNormaXmlAsync(idNorma, ct);
             if (xml is null) return BadRequest("No se pudo obtener XML de BCN.");
 
-            // 2) Parse básico (título, entidad, tipo, descripción)
+            // 2) Parse preliminar
             var url = $"https://www.leychile.cl/Consulta/obtxml?opt=7&idNorma={idNorma}";
             var dto = RequisitoImportParser.Parse(idNorma, xml, url);
 
-            // 3) Determina ID_tipo desde la tabla maestra (nombre exacto, normalizado)
-            static string NormalizeKey(string s)
-            {
-                if (string.IsNullOrWhiteSpace(s)) return string.Empty;
-                s = s.Trim().ToLowerInvariant()
-                     .Replace("á", "a").Replace("é", "e").Replace("í", "i").Replace("ó", "o").Replace("ú", "u")
-                     .Replace("ü", "u").Replace("ñ", "n");
-                return s;
-            }
+            // 3) Resolver IdTipo a partir del texto
+            int? idTipo = await ResolverIdTipoAsync(dto.Tipo, ct);
 
-            int? idTipo = null;
-            {
-                var dtoKey = NormalizeKey(dto.Tipo ?? "");
-                // Trae todos una sola vez (catálogo pequeño y estable)
-                var tipos = await _db.Tipos.AsNoTracking().ToListAsync(ct);
-
-                var match = tipos.FirstOrDefault(t => NormalizeKey(t.Nombre) == dtoKey);
-                if (match != null)
-                    idTipo = match.IdTipo;
-                else
-                {
-                    var otro = tipos.FirstOrDefault(t => NormalizeKey(t.Nombre) == "otro");
-                    idTipo = otro?.IdTipo; // fallback a "OTRO" si existe, si no queda null
-                }
-            }
             var numero = ExtraerNumeroNorma(xml);
             var tituloFinal = ComposeTitulo(dto.Tipo, numero, dto.Titulo);
 
-            // 4) Upsert del REQUISITO por (norma + organismo)
+            // 4) Upsert requisito por (NormaIDBCN + IdOrganismo)
             var requisito = await _db.Requisitos
                 .FirstOrDefaultAsync(r => r.NormaIDBCN == idNorma && r.IdOrganismo == idOrganismo, ct);
 
@@ -127,7 +129,7 @@ namespace ReqSaaS_1.Controllers
                     Descripcion = dto.Descripcion,
                     Entidad = dto.Entidad,
                     PorcentajeCumplimiento = 0,
-                    IdOrganismo = idOrganismo,   // vínculo al usuario logueado
+                    IdOrganismo = idOrganismo,
                     NormaIDBCN = idNorma,
                     IdTipo = idTipo
                 };
@@ -142,9 +144,9 @@ namespace ReqSaaS_1.Controllers
                 requisito.IdTipo = idTipo;
             }
 
-            await _db.SaveChangesAsync(ct); // asegura ID_requisito
+            await _db.SaveChangesAsync(ct); // asegura IdReq
 
-            // 5) Extrae artículos del XML y pobla DetalleEvaluacion sin duplicar
+            // 5) Artículos → DetalleEvaluacion (sin duplicar)
             var articulos = ExtraerArticulos(xml);
 
             var existentes = await _db.DetalleEvaluaciones
@@ -167,8 +169,8 @@ namespace ReqSaaS_1.Controllers
                 {
                     IdRequisito = requisito.IdReq,
                     Detalle = art,
-                    Cumplimiento = false,   // el usuario lo definirá después
-                    Justificacion = null,   // lo llenará después
+                    Cumplimiento = false,
+                    Justificacion = null,
                     ArchivoUrl = null
                 });
             }
@@ -179,7 +181,7 @@ namespace ReqSaaS_1.Controllers
                 await _db.SaveChangesAsync(ct);
             }
 
-            // 6) Recalcula % cumplimiento
+            // 6) Recalcular % de cumplimiento
             var tot = await _db.DetalleEvaluaciones.CountAsync(d => d.IdRequisito == requisito.IdReq, ct);
             var ok = await _db.DetalleEvaluaciones.CountAsync(d => d.IdRequisito == requisito.IdReq && d.Cumplimiento, ct);
 
@@ -200,20 +202,44 @@ namespace ReqSaaS_1.Controllers
         }
 
         // =========================
-        // Helper: extrae artículos desde el XML de BCN
+        // Helpers (BCN)
         // =========================
+
+        private async Task<int?> ResolverIdTipoAsync(string? tipoTexto, CancellationToken ct)
+        {
+            static string NormalizeKey(string s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+                s = s.Trim().ToLowerInvariant()
+                     .Replace("á", "a").Replace("é", "e").Replace("í", "i").Replace("ó", "o").Replace("ú", "u")
+                     .Replace("ü", "u").Replace("ñ", "n");
+                return s;
+            }
+
+            if (string.IsNullOrWhiteSpace(tipoTexto))
+                return null;
+
+            var key = NormalizeKey(tipoTexto);
+            var tipos = await _db.Tipos.AsNoTracking().ToListAsync(ct);
+
+            var match = tipos.FirstOrDefault(t => NormalizeKey(t.Nombre) == key);
+            if (match != null) return match.IdTipo;
+
+            var otro = tipos.FirstOrDefault(t => NormalizeKey(t.Nombre) == "otro");
+            return otro?.IdTipo;
+        }
+
+        // Extrae artículos desde el XML BCN
         private static List<string> ExtraerArticulos(string xml)
         {
             var doc = XDocument.Parse(xml);
             XNamespace ns = "http://www.leychile.cl/esquemas";
 
-            // <EstructuraFuncional tipoParte="Artículo"><Texto>...</Texto>
             var textos = doc
                 .Descendants(ns + "EstructuraFuncional")
                 .Where(n =>
                 {
                     var tp = (string?)n.Attribute("tipoParte") ?? string.Empty;
-                    // “Artículo” (con o sin tilde)
                     return tp.Contains("rtículo", StringComparison.OrdinalIgnoreCase)
                         || tp.Contains("Articulo", StringComparison.OrdinalIgnoreCase);
                 })
@@ -224,13 +250,13 @@ namespace ReqSaaS_1.Controllers
 
             return textos;
         }
-        // Extrae el <Numero> (o variantes) desde el XML de BCN
+
+        // Extrae el número de norma
         private static string? ExtraerNumeroNorma(string xml)
         {
             var doc = XDocument.Parse(xml);
             XNamespace ns = "http://www.leychile.cl/esquemas";
 
-            // Intentos con nombres más comunes
             foreach (var tag in new[] { "Numero", "NumeroNorma", "NumeroOficial" })
             {
                 var val = doc.Descendants(ns + tag)
@@ -240,7 +266,6 @@ namespace ReqSaaS_1.Controllers
                     return val!.Trim();
             }
 
-            // Fallback por nombre local (por si cambia el namespace)
             var any = doc.Descendants()
                          .FirstOrDefault(e =>
                              e.Name.LocalName.Equals("Numero", StringComparison.OrdinalIgnoreCase) ||
@@ -249,7 +274,7 @@ namespace ReqSaaS_1.Controllers
             return string.IsNullOrWhiteSpace(v2) ? null : v2;
         }
 
-        // Arma: "{Tipo} N° {Numero} — {TítuloActual}"
+        // "{Tipo} N° {Numero} - {Título}"
         private static string ComposeTitulo(string? tipo, string? numero, string? tituloActual)
         {
             var t = (tipo ?? "").Trim();
@@ -266,8 +291,7 @@ namespace ReqSaaS_1.Controllers
             return $"{prefix} - {baseTitulo}";
         }
 
-
-        // Normaliza espacios para comparar textos iguales con distinto espaciado
+        // Normaliza espacios para comparar textos
         private static string Normalize(string s)
             => Regex.Replace(s ?? string.Empty, @"\s+", " ").Trim();
     }

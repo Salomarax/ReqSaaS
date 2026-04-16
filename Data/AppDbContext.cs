@@ -16,8 +16,7 @@ namespace ReqSaaS_1.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // comenta si no usas ScalarInt
-            modelBuilder.Entity<ScalarInt>().HasNoKey();
+            
 
             modelBuilder.HasDefaultSchema("public");
 

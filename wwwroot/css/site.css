@@ -22,12 +22,12 @@ html {
 
 body {
     margin: 0;
-    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     color: #0f172a;
-    background-color: #ffffff; /* ← fondo por defecto (app con sidebar) */
+    background-color: #ffffff; /* fondo por defecto. app con sidebar) */
 }
 
-/* Accesibilidad (respeta Bootstrap) */
+/* Accesibilidad respetando Bootstrap */
 .btn:focus,
 .btn:active:focus,
 .btn-link.nav-link:focus,
@@ -35,6 +35,7 @@ body {
 .form-check-input:focus {
     box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem #258cfb;
 }
+
 
 /* =====================================================================
    2) Layout: app con sidebar y modo plano (login/landing)
@@ -47,8 +48,8 @@ body {
 }
 
 .sidebar {
-    width: 160px; /* ← ajusta ancho aquí */
-    flex: 0 0 160px; /* ← fija la columna al mismo ancho */
+    width: 160px;
+    flex: 0 0 160px;
     background: #2ecc40;
     color: #fff;
     display: flex;
@@ -127,7 +128,7 @@ body {
 /* --- Modo plano (login / landing) --- */
 .plain-shell {
     min-height: 100vh;
-    background: linear-gradient(180deg,#a8e063 0%, #56ab2f 100%); /* ← solo en login */
+    background: linear-gradient(180deg,#a8e063 0%, #56ab2f 100%);
 }
 
 .plain-content {
@@ -138,7 +139,6 @@ body {
 }
 
 /* Responsive sidebar */
-/* === Barra superior compacta cuando la sidebar se apila (≤992px) === */
 @media (max-width: 992px) {
     .app-shell {
         flex-direction: column;
@@ -146,25 +146,24 @@ body {
 
     .sidebar {
         width: 100%;
-        flex: 0 0 auto; /* evita que ocupe gran altura */
+        flex: 0 0 auto;
         position: sticky;
         top: 0;
         z-index: 1000;
         border-radius: 0;
-        /* ↓ más compacta */
         padding: 8px 12px;
         display: flex;
-        flex-direction: row; /* en una sola fila */
+        flex-direction: row;
         align-items: center;
         gap: 8px;
     }
 
         .sidebar .brand {
-            font-size: 18px; /* más pequeño que en desktop */
+            font-size: 18px;
             margin: 0;
         }
 
-            .sidebar .brand small { /* quita subtítulo para ganar altura */
+            .sidebar .brand small {
                 display: none;
             }
 
@@ -174,29 +173,26 @@ body {
             flex-direction: row;
             gap: 6px;
             margin: 0;
-            overflow-x: auto; /* si no cabe, permite desplazamiento horizontal */
+            overflow-x: auto;
             white-space: nowrap;
-            scrollbar-width: thin; /* navegadores que lo soporten */
+            scrollbar-width: thin;
         }
 
-            .sidebar .nav a,
-            .sidebar .logout a {
-                padding: 6px 10px; /* botones más compactos */
+            .sidebar .nav a, .sidebar .logout a {
+                padding: 6px 10px;
                 border-radius: 8px;
             }
 
         .sidebar hr {
             display: none;
         }
-    /* evita sumar altura innecesaria */
 
     .content {
         border-radius: 0;
-        padding: 12px 16px; /* un poco menos de padding en móvil */
+        padding: 12px 16px;
     }
 }
 
-/* Extra-compacto para pantallas muy pequeñas */
 @media (max-width: 480px) {
     .sidebar {
         padding: 6px 10px;
@@ -216,18 +212,17 @@ body {
     width: 100%;
     margin: 0 auto;
     padding: 16px clamp(12px, 2vw, 28px);
-    max-width: none; /* sin límite por defecto */
+    max-width: none;
 }
 
 /* Versión con tope “cómodo”: aplicada por defecto dentro del layout */
 .content > .page {
     width: 100% !important;
-    max-width: min(96vw - 2rem, 1400px) !important; /* responsivo + tope */
+    max-width: min(96vw - 2rem, 1400px) !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
 }
 
-    /* Forzar que “burbujas/grids” principales llenen el ancho disponible */
     .content > .page > .card,
     .content > .page > .card-lg,
     .content > .page > .table-wrap,
@@ -235,7 +230,7 @@ body {
         width: 100% !important;
     }
 
-    /* Página fluida (sin tope de ancho): usa class="page page--fluid" en la vista */
+    /* Página fluida (sin tope) */
     .content > .page.page--fluid {
         max-width: none !important;
     }
@@ -246,6 +241,7 @@ body {
             width: 100% !important;
             max-width: none;
         }
+
 
 /* =====================================================================
    4) Componentes reutilizables
@@ -266,7 +262,7 @@ body {
         margin: 0;
     }
 
-/* Tarjetas / paneles */
+/* Tarjetas/paneles */
 .card {
     background: #fff;
     border-radius: 14px;
@@ -280,45 +276,38 @@ body {
 }
 
 /* Filtros (inputs arriba del listado) */
-/* Filtros: que los selects NO ocupen todo el ancho */
 .filters {
     align-items: center;
 }
 
-    .filters select,
-    .filters input {
-        width: auto; /* anula el 100% global */
-        flex: 0 1 280px; /* ancho base ~280px, se puede encoger/crecer */
+    .filters select, .filters input {
+        width: auto;
+        flex: 0 1 280px;
         min-width: 180px;
         max-width: 340px;
     }
 
     .filters button {
-        flex: 0 0 auto; /* el botón solo su tamaño */
+        flex: 0 0 auto;
     }
 
-/* En móvil que se apilen a 100% */
-@media (max-width: 768px) {
-    .filters select,
-    .filters input,
-    .filters button {
+@media (max-width:768px) {
+    .filters select, .filters input, .filters button {
         flex: 1 1 100%;
         min-width: 0;
         max-width: 100%;
     }
 }
 
-
 /* Envoltura de tablas “grandes” */
-.table-wrap,
-.table-wrapper { /* ← alias unificados */
+.table-wrap, .table-wrapper {
     background: #fff;
     border-radius: 14px;
     padding: 18px;
     box-shadow: 0 10px 24px rgba(0,0,0,.08);
 }
 
-/* Estilos base de todas las tablas de la app (evita “globales” peligrosos) */
+/* Estilos base tablas */
 .page table {
     width: 100%;
     border-collapse: collapse;
@@ -338,13 +327,13 @@ body {
     font-weight: 600;
 }
 
-/* Tabla “scrollable” en pantallas chicas: aplicar class="table-clean" */
+/* Tabla “scrollable” */
 .table-clean {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
-    display: block; /* clave */
-    overflow-x: auto; /* clave */
+    display: block;
+    overflow-x: auto;
 }
 
     .table-clean thead, .table-clean tbody, .table-clean tr {
@@ -384,9 +373,9 @@ body {
     color: #1e40af;
 }
 
-.badge-green {
-    background: #dcfce7;
-    color: #166534;
+.badge-yellow {
+    background: #FCF37E;
+    color: #D4A017;
 }
 
 .badge-gray {
@@ -406,22 +395,21 @@ body {
         background: #e8f5e9;
         color: #1b5e20;
     }
-    /* En Cumplimiento */
+
     .chip.warn {
         background: #fff8e1;
         color: #a37500;
     }
-    /* En Proceso */
+
     .chip.bad {
         background: #ffebee;
         color: #b71c1c;
     }
-    /* Incumplido */
+
     .chip.na {
         background: #eceff1;
         color: #455a64;
     }
-/* No Aplica */
 
 .pill {
     display: inline-block;
@@ -449,10 +437,10 @@ body {
         height: 100%;
     }
 
-/* Grid de estadísticas (cabeceras del Detalle) */
+/* Grid de estadísticas */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(180px,1fr));
+    grid-template-columns: repeat(4,minmax(180px,1fr));
     gap: 14px;
     margin-bottom: 16px;
 }
@@ -475,7 +463,7 @@ body {
         color: #111827;
     }
 
-/* Tabs reutilizables */
+/* Tabs */
 .tabs {
     display: flex;
     gap: 8px;
@@ -505,7 +493,7 @@ body {
     color: #6b7280;
 }
 
-/* Botones (OJO: .btn afecta Bootstrap; mantenido por compatibilidad con tus vistas) */
+/* Botones (compatibles con Bootstrap) */
 .btn {
     border: none;
     background: #16a34a;
@@ -589,9 +577,9 @@ input[type="text"], textarea, select, input[type="file"] {
         text-decoration: underline;
     }
 
+
 /* =====================================================================
-   5) Estilos específicos para la página de Login (Index.cshtml)
-   — Escopados a .plain-content para no contaminar la app con sidebar
+   5) Estilos específicos Login (Index.cshtml)
    ===================================================================== */
 .plain-content .container {
     display: flex;
@@ -600,8 +588,7 @@ input[type="text"], textarea, select, input[type="file"] {
     justify-content: center;
 }
 
-.plain-content .calendar-box,
-.plain-content .login-box {
+.plain-content .calendar-box, .plain-content .login-box {
     width: 50%;
     height: 80%;
     display: flex;
@@ -655,6 +642,7 @@ input[type="text"], textarea, select, input[type="file"] {
             background-color: #0056b3;
         }
 
+
 /* =====================================================================
    6) FullCalendar (dentro de tarjetas)
    ===================================================================== */
@@ -663,10 +651,11 @@ input[type="text"], textarea, select, input[type="file"] {
     border-radius: 10px;
 }
 
+
 /* =====================================================================
-   7) Breakpoints (respirar mejor en móviles)
+   7) Breakpoints (móviles)
    ===================================================================== */
-@media (max-width: 768px) {
+@media (max-width:768px) {
     .content {
         padding: 12px;
     }
@@ -679,35 +668,31 @@ input[type="text"], textarea, select, input[type="file"] {
         font-size: 1.25rem;
     }
 }
-/* --- Espaciados claros entre bloques principales --- */
 
-/* 1) Filtros → bloque siguiente (tabla/card) */
-.filters,
-.filters--compact {
-    margin-bottom: 20px; /* separación “normal” */
+
+/* =====================================================================
+   8) Espaciados claros entre bloques principales
+   ===================================================================== */
+.filters, .filters--compact {
+    margin-bottom: 20px;
 }
 
-    /* Si alguna vista resetea márgenes, forzamos el gap por adyacencia */
     .filters + .table-wrap,
     .filters + .table-wrapper,
     .filters + .card {
         margin-top: 14px;
     }
 
-/* 2) Encabezado del detalle (card con el título) → tabla de ítems */
-.card.header { /* <div class="card header"> */
-    margin-bottom: 22px; /* más aire bajo el título */
+.card.header {
+    margin-bottom: 22px;
 }
 
-    .card.header + .card, /* por si el card de abajo no tiene margen */
-    .page-header + .card {
+    .card.header + .card, .page-header + .card {
         margin-top: 16px;
     }
 
-/* Ajuste en pantallas pequeñas: un poco menos de separación */
-@media (max-width: 768px) {
-    .filters,
-    .filters--compact {
+@media (max-width:768px) {
+    .filters, .filters--compact {
         margin-bottom: 14px;
     }
 
@@ -716,13 +701,237 @@ input[type="text"], textarea, select, input[type="file"] {
     }
 }
 
-/* Sin subrayado en Cerrar sesión y en los iconos de Acciones */
-.logout a,
-.actions a {
+/* Sin subrayado en Cerrar sesión y en iconos de Acciones */
+.logout a, .actions a {
     text-decoration: none;
 }
-
 /* Evita que .table-clean a:hover subraye los iconos dentro de Acciones */
 .table-clean .actions a:hover {
     text-decoration: none;
+}
+
+
+/* =====================================================================
+   9) Accesibilidad / utilidades
+   ===================================================================== */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+
+/* =====================================================================
+   10) Botón de ayuda (ícono "i")
+   ===================================================================== */
+.input-group-text#helpIdNorma {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #9b5de5;   /* borde morado */
+    border-radius: 9999px;
+    background: #9b5de5;         /* fondo morado */
+    color: #ffffff;               /* “i” blanca */
+    font-weight: 600;
+    cursor: pointer;
+    transition: box-shadow .15s ease, border-color .15s ease, transform .06s ease, background-color .15s ease;
+    user-select: none;
+    line-height: 1;
+}
+
+.input-group-text#helpIdNorma:hover {
+    border-color: #7e57c2;       /* más intenso al hover */
+    background: #7e57c2;
+}
+
+.input-group-text#helpIdNorma:active {
+    transform: scale(0.98);
+}
+
+.input-group-text#helpIdNorma:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(155,93,229,.35); /* anillo accesible */
+    border-color: #9b5de5;
+}
+
+/* Si la “i” es SVG, hará match con el color del texto */
+.input-group-text#helpIdNorma svg {
+    fill: currentColor;
+}
+
+
+/* =====================================================================
+   11) Popover (Bootstrap y fallback)
+   ===================================================================== */
+/* Límite de ancho genérico y cuerpo desplazable */
+.popover {
+    max-width: 680px;
+}
+
+    .popover .popover-body img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+    }
+
+    .popover .popover-body {
+        max-height: 60vh;
+        overflow: auto;
+    }
+/* En pantallas pequeñas, ocupar casi todo el ancho */
+@media (max-width:768px) {
+    .popover {
+        max-width: 96vw;
+    }
+}
+
+/* Fallback sin Bootstrap – creado con id="popoverIdNorma" desde JS */
+#popoverIdNorma {
+    position: absolute;
+    display: none;
+    max-width: 680px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(15,23,42,.12);
+    padding: 12px;
+    z-index: 1000;
+    animation: popover-fade-in .12s ease-out;
+}
+
+    #popoverIdNorma::after {
+        content: "";
+        position: absolute;
+        top: -8px;
+        left: 12px;
+        border-width: 8px;
+        border-style: solid;
+        border-color: transparent transparent #ffffff transparent;
+        filter: drop-shadow(0 -1px 0 #e5e7eb);
+    }
+
+    #popoverIdNorma img {
+        width: 100%;
+        height: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        display: block;
+    }
+
+    #popoverIdNorma .popover-title {
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #111827;
+    }
+
+@keyframes popover-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* =====================================================================
+   12) Modo oscuro (opcional)
+   ===================================================================== */
+@media (prefers-color-scheme: dark) {
+    .input-group-text#helpIdNorma {
+        background: #0b1220;
+        color: #e5e7eb;
+        border-color: #233045;
+    }
+
+        .input-group-text#helpIdNorma:hover {
+            border-color: #334155;
+        }
+}
+
+
+/* =====================================================================
+   13) AddReq – Ítems / Artículos dinámicos
+   ===================================================================== */
+.section-subtitle {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/* lista sin bullets y sin padding izquierdo */
+.items-list {
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+}
+
+/* cada fila: agarre ▦ + input + botón X */
+.item-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+    /* “agarre” visual (decorativo) */
+    .item-row .dragpad {
+        font-size: 18px;
+        line-height: 1;
+        color: #9ca3af;
+        user-select: none;
+        padding: 0 4px;
+    }
+
+    /* input del ítem a todo el ancho */
+    .item-row .item-input {
+        width: 100%;
+    }
+
+/* botón X minimalista */
+.icon-btn.remove-item {
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+    .icon-btn.remove-item:hover {
+        background: #f9fafb;
+    }
+
+/* contenedor de acciones bajo la lista */
+.items-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+/* versión móvil un poco más compacta */
+@media (max-width:640px) {
+    .item-row {
+        gap: 6px;
+    }
+
+    .icon-btn.remove-item {
+        padding: 6px 8px;
+    }
 }

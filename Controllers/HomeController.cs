@@ -35,7 +35,7 @@ public class HomeController : Controller
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public IActionResult GetFeriados()
     {
-        // Redirige al navegador a la API pública (evita el 403 desde tu servidor)
+        // Redirige al navegador a la API públic. evita el 403 de servidor 
         return Redirect("https://api.boostr.cl/holidays.json");
     }
 
@@ -121,9 +121,24 @@ public class HomeController : Controller
     }
 
     [Authorize(Policy = "Nivel2Plus")]
-    [HttpGet("/Home/AddReq")] // ← ruta explícita; evita ambigüedades
+    [HttpGet("/Home/AddReq")] 
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-    public IActionResult AddReq() => View("AddReq");
+    public async Task<IActionResult> AddReq()
+    {
+        var vm = new CreateRequirementVM
+        {
+            Tipos = await _db.Tipos
+                             .AsNoTracking()
+                             .OrderBy(t => t.Nombre)
+                             .ToListAsync()
+            // TipoId = <valor por defecto si quieres preseleccionar>
+        };
+
+        ViewData["UseSideBar"] = true;   // para que cargue el layout con sidebar
+        return View("AddReq", vm);       // pasa el modelo a la vista
+    }
+
+
 
 
     // --- LOGOUT ---
@@ -178,7 +193,7 @@ public class HomeController : Controller
                     r.IdReq,
                     r.Titulo,
                     r.Entidad,
-                    r.NormaIDBCN, // <-- debe mapear a columna "normaID_BCN"
+                    r.NormaIDBCN, //  mapear a columna "normaID_BCN"
                     r.IdTipo
                 });
 
@@ -305,7 +320,7 @@ public class HomeController : Controller
 
             var dbItems = await _db.DetalleEvaluaciones
                 .Where(d => d.IdRequisito == model.IdReq && ids.Contains(d.IdItem))
-                .OrderBy(d => d.IdItem)   // ok
+                .OrderBy(d => d.IdItem)   
                 .ToListAsync(ct);
 
             var map = dbItems.ToDictionary(d => d.IdItem);
@@ -320,7 +335,7 @@ public class HomeController : Controller
             }
             await _db.SaveChangesAsync(ct);
 
-            // Recalcula %
+            // Recalcula % de cumplimiento
             var tot = await _db.DetalleEvaluaciones.CountAsync(d => d.IdRequisito == model.IdReq, ct);
             var cumpl = await _db.DetalleEvaluaciones.CountAsync(d => d.IdRequisito == model.IdReq && d.Cumplimiento, ct);
             var req = await _db.Requisitos.FindAsync(new object[] { model.IdReq }, ct);
@@ -335,5 +350,53 @@ public class HomeController : Controller
         TempData["ok"] = "Cambios guardados.";
         return RedirectToAction(nameof(ReqDetails), new { id = model.IdReq });
     }
+  
 
+    // POST /Home/CreateRequirement  -> Guarda requisito Manual + N ítems
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateRequirement(CreateRequirementVM vm, CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+        {
+            vm.Tipos = await _db.Tipos.AsNoTracking().OrderBy(t => t.Nombre).ToListAsync(ct);
+            return View("AddReq", vm);
+        }
+
+        var items = (vm.Items ?? new()).Select(s => (s ?? "").Trim()).Where(s => s.Length > 0).ToList();
+        if (items.Count == 0)
+        {
+            ModelState.AddModelError("", "Agrega al menos un ítem/artículo.");
+            vm.Tipos = await _db.Tipos.AsNoTracking().OrderBy(t => t.Nombre).ToListAsync(ct);
+            return View("AddReq", vm);
+        }
+
+        var idOrganismo = User.FindFirst("rut")?.Value;
+
+        var req = new Requisito
+        {
+            Titulo = vm.Titulo,
+            Entidad = vm.Entidad,
+            Descripcion = vm.Descripcion,
+            IdTipo = vm.TipoId,                // usar catálogo Tipos de api BCN
+            IdOrganismo = idOrganismo,
+            PorcentajeCumplimiento = 0
+        };
+
+        _db.Requisitos.Add(req);
+        await _db.SaveChangesAsync(ct);       // asegura PK
+
+        foreach (var det in items)
+        {
+            _db.DetalleEvaluaciones.Add(new DetalleEvaluacion
+            {
+                IdRequisito = req.IdReq,
+                Detalle = det,
+                Cumplimiento = false
+            });
+        }
+        await _db.SaveChangesAsync(ct);
+
+        return RedirectToAction("ReqView", "Home");
+    }
 }

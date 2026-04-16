@@ -11,7 +11,7 @@
 <div class="page page--fluid">
 
     <div class="page-header">
-        <h2>Requisitos Normativos con Estado de Cumplimiento</h2>
+        <h2>Resumen Evaluación de Requisitos</h2>
         <p>Estado actual de cumplimiento y progreso de cada requisito normativo</p>
     </div>
 
@@ -87,8 +87,8 @@
           /* ============================
              Endpoints que usa la vista
              ============================ */
-          const urlResumen = '@Url.Action("RequisitosResumen", "Home")'; // API que devuelve el resumen de requisitos
-          const urlTipos   = '@Url.Action("Tipos", "Home")';             // API que devuelve el catálogo de tipos
+          const urlResumen = '@Url.Action("RequisitosResumen", "Home")'; 
+          const urlTipos   = '@Url.Action("Tipos", "Home")';             
 
           /* ==========================================================
              Plantillas de URL para acciones (con marcador __ID__)
@@ -99,17 +99,17 @@
           /* ============================
              Referencias a elementos DOM
              ============================ */
-          const $rows    = document.getElementById('req-rows');                // <tbody> donde pintamos filas
-          const $txt     = document.getElementById('flt-text');                // (opcional) cuadro de búsqueda
-          const $tipo    = document.getElementById('flt-tipo');                // <select> de tipos
-          const $estado  = document.querySelector('.filters select:not(#flt-tipo)'); // primer <select> (estado)
-          // Botón “Borrar filtros”. Si no existe #btn-clear, intenta con el antiguo #btn-filtrar
+          const $rows    = document.getElementById('req-rows');                
+          const $txt     = document.getElementById('flt-text');                
+          const $tipo    = document.getElementById('flt-tipo');               
+          const $estado  = document.querySelector('.filters select:not(#flt-tipo)');
+          // Botón “Borrar filtros”. Si no existe 
           const $btnClear = document.getElementById('btn-clear') || document.getElementById('btn-filtrar');
 
           /* ============================
              Estado en memoria (data cruda)
              ============================ */
-          let data = [];              // arreglo con todos los requisitos traídos desde la API
+          let data = [];              
           let tiposMap = new Map();   // diccionario idTipo -> nombre
 
           /* -----------------------------------------------------------------
@@ -128,8 +128,8 @@
              - siempre entre 0 y 100
              ----------------------------------------------------------------- */
           const pctOf = (r) => {
-            let pct = get(r, ['Porcentaje','porcentaje'], null); // intenta leer el porcentaje “servido”
-            if (pct == null) {                                    // si no vino, lo calculamos
+            let pct = get(r, ['Porcentaje','porcentaje'], null);
+            if (pct == null) {                                    
               const ok    = Number(get(r, ['Cumplidos','cumplidos'], 0));
               const total = Number(get(r, ['Total','total'], 0));
               pct = total > 0 ? Math.round((ok / total) * 100) : 0;
@@ -145,8 +145,8 @@
              ----------------------------------------------------------------- */
           const estadoBadge = (pct) =>
             pct >= 100
-              ? `<span class="badge badge-green">En Cumplimiento</span>`
-              : `<span class="badge badge-blue">En Proceso</span>`;
+              ? `<span class="badge badge-blue">En Cumplimiento</span>`
+              : `<span class="badge badge-yellow">En Proceso</span>`;
 
           // Devuelve el nombre del tipo desde el map (si no, '—')
           const tipoNombre = (id) => tiposMap.get(Number(id)) || '—';
@@ -160,9 +160,9 @@
              Usa .value si existe, y si no intenta inferir por el texto visible.
              ----------------------------------------------------------------- */
           const readEstadoFilter = () => {
-            if (!$estado) return '';                             // si no hay select, no hay filtro
-            const val = ($estado.value || '').trim();            // primero intentamos por value
-            if (val) return val;                                 // ideal: 'C' o 'P'
+            if (!$estado) return '';                             
+            const val = ($estado.value || '').trim();           
+            if (val) return val;                                
 
             // Fallback: deduce por el texto del option seleccionado
             const txt = ($estado.options[$estado.selectedIndex]?.text || '').toLowerCase();
@@ -230,11 +230,11 @@
              - Estado (primer <select> de .filters)
              ----------------------------------------------------------------- */
           function applyFilter(){
-            const q = (($txt && $txt.value) || '').toLowerCase().trim(); // texto a buscar
-            const t = ($tipo && $tipo.value) || '';                      // id de tipo
-            const e = readEstadoFilter();                                // '' | 'C' | 'P'
+            const q = (($txt && $txt.value) || '').toLowerCase().trim(); 
+            const t = ($tipo && $tipo.value) || '';                      
+            const e = readEstadoFilter();                               
 
-            let list = data.slice();                                     // copia de trabajo
+            let list = data.slice();                                   
 
             // Filtro de texto: título o entidad
             if (q) {
@@ -250,7 +250,7 @@
             // Filtro por estado (se deriva del %)
             if (e) list = list.filter(r => (pctOf(r) >= 100 ? 'C' : 'P') === e);
 
-            render(list);                                                // repinta con el resultado
+            render(list);                                                // repintar con el resultado
           }
 
           /* -----------------------------------------------------------------
@@ -282,7 +282,7 @@
             try{
               const res = await fetch(urlResumen, { cache:'no-store', credentials:'same-origin' });
               if(!res.ok){
-                // Manejo de error “amigable”
+                // Manejo de error 
                 const txt = await res.text();
                 try{
                   const j = JSON.parse(txt);
@@ -294,14 +294,14 @@
                 return;
               }
 
-              const json = await res.json();                             // esperamos un array
+              const json = await res.json();                             // espera un array
               if(!Array.isArray(json)){
                 $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Formato inesperado del resumen.</td></tr>`;
                 return;
               }
 
               data = json;                                               // guardamos data cruda
-              render(data);                                              // primer pintado (sin filtros)
+              render(data);                                              // primer pintado sin filtros
             }catch(e){
               console.error(e);
               $rows.innerHTML = `<tr><td colspan="6" class="center" style="color:#b91c1c">Error al cargar el resumen (ver consola).</td></tr>`;
@@ -315,10 +315,11 @@
             ev?.preventDefault();            // evita submit o navegación
             if ($txt)    $txt.value    = ''; // limpia texto
             if ($tipo)   $tipo.value   = ''; // limpia tipo
-            if ($estado) $estado.value = ''; // limpia estado (y por si el “Todos” no tiene value…)
+            if ($estado) $estado.value = ''; // limpia estado 
             if ($estado && !$estado.value) $estado.selectedIndex = 0; // asegura seleccionar la 1ª opción
 
-            // Si ya hay data, repintamos con todo; si aún no, la cargamos
+            // Si ya hay data, zctualizamos con todo. si aún no, la cargamos nueva
+
             if (data && data.length) render(data); else loadResumen();
           }
 
@@ -346,11 +347,11 @@
            Delegación para abrir el modal de eliminar (ícono 🗑️)
            ----------------------------------------------------------------- */
         document.addEventListener('click', function (e) {
-          const a = e.target.closest('.btn-delete'); // busca un ancestro con la clase
-          if (!a) return;                             // si no fue un click en eliminar, salimos
-          e.preventDefault();                         // evita navegación
+          const a = e.target.closest('.btn-delete'); 
+          if (!a) return;                             
+          e.preventDefault();                         
 
-          const id    = a.getAttribute('data-id');    // ID del requisito
+          const id    = a.getAttribute('data-id');    
           const title = a.getAttribute('data-title') || 'Sin título'; // título amigable
 
           // Inyecta datos en el modal

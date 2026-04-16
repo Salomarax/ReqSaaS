@@ -1,15 +1,13 @@
 ﻿@{
     ViewData["UseSideBar"] = false;
-    ViewData["Title"] = "Calendario de Feriados";
-
+    ViewData["Title"] = "Login - ";
 }
-
 
 <div class="container">
     <!-- Calendario -->
     <div class="calendar-box">
         <div class="calendar-content">
-            <h2 style="color: green;">Calendario de Feriados</h2>
+            <h3 style="color: green;">Calendario de Feriados</h3>
             <div id="calendar"></div>
             <br />
             <div id="feriadoList"></div>
@@ -19,7 +17,15 @@
     <!-- Login -->
     <div class="login-box">
         <div class="login-form">
-            <h3>Iniciar Sesión</h3>
+            <div class="brand text-center mb-3">
+                <img src="~/img/reqsaas-logo.png"
+                     alt="ReqSaaS"
+                     class="img-fluid"
+                     style="max-height:120px;margin-bottom:8px"
+                     asp-append-version="true" />
+            </div>
+
+            <h4>Iniciar Sesión</h4>
 
             @Html.ValidationSummary(false, "", new { @class = "text-danger", style = "text-align:left" })
 
@@ -32,10 +38,11 @@
                 }
 
                 <input type="text" name="Rut"
-                       placeholder="RUT sin puntos ni guion (ej: 12345678K)"
+                       placeholder="Ej: 12345678K "
                        autocomplete="username"
                        inputmode="text"
-                       pattern="^[0-9]+[0-9Kk]$"
+                       pattern="^[0-9]+-?[0-9Kk]$"
+                       title="Ingresa el RUT con o sin guion (ej: 12345678K o 12345678-K)"
                        required />
 
                 <input type="password"
@@ -44,10 +51,12 @@
                        autocomplete="current-password"
                        required />
 
+                <!--
                 <label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
                     <input type="checkbox" name="RememberMe" />
                     Recordarme
                 </label>
+                -->
 
                 <button type="submit">Entrar</button>
             </form>
@@ -59,10 +68,22 @@
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            var calendarEl  = document.getElementById('calendar');
+            var calendarEl = document.getElementById('calendar');
             var feriadoList = document.getElementById('feriadoList');
+
+            // Parse "YYYY-MM-DD" como fecha LOCAL (evita desfase UTC)
+            function parseLocalDate(isoDate) {
+                if (!isoDate) return null;
+                const s = String(isoDate).slice(0, 10); // "YYYY-MM-DD"
+                const parts = s.split('-').map(Number);
+                if (parts.length !== 3) return null;
+                const [y, m, d] = parts;
+                if (!y || !m || !d) return null;
+                return new Date(y, m - 1, d); // local time
+            }
 
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
@@ -71,53 +92,50 @@
                 // FullCalendar pedirá eventos aquí:
                 events: async function (info, successCallback, failureCallback) {
                     try {
-                        // (1) SEGUIR REDIRECT 302 A LA API EXTERNA (mínimo cambio en tu proyecto)
-                   
                         const url = '@Url.Action("GetFeriados", "Home")';
                         const res = await fetch(url, { redirect: 'follow' });
 
-                        // (2) ERRORES HTTP CLAROS
                         if (!res.ok) {
                             const msg = await res.text();
                             throw new Error(msg || ('HTTP ' + res.status));
                         }
 
-                        // (3) NORMALIZAR FORMATO DEL PAYLOAD
-                        //     Si la respuesta es un array, úsalo directo.
-                        //     Si viene envuelto en { data: [...] } u otros,
-                        //     toma la colección. Esto evita fallar si cambian el contenedor.
                         const json = await res.json();
                         const data = Array.isArray(json) ? json : (json.data ?? json.items ?? json.result ?? []);
 
-                        // (4) NORMALIZAR NOMBRES DE CAMPOS
-                        //     La API puede usar: date/title/inalienable o fecha/nombre/irrenunciable.
+                        // Eventos para el calendario
                         const eventos = (data || []).map(h => {
                             const title = h.title ?? h.nombre ?? h.Nombre ?? 'Feriado';
-                            const start = h.date  ?? h.fecha  ?? h.Fecha  ?? null;
+                            const start = h.date ?? h.fecha ?? h.Fecha ?? null;
                             return start ? { title, start } : null;
                         }).filter(Boolean);
 
-                        // (5) ENTREGAR EVENTOS AL CALENDARIO
                         successCallback(eventos);
 
-                        // (6) LISTA “Feriados del mes” (mismo set de datos, ya normalizado)
-                        const mesActual0 = new Date().getMonth(); // 0..11
+                        // Lista “Feriados del mes” según mes/año de la vista del calendario
+                         const viewDate = calendar.getDate();      // fecha del mes actualmente mostrado
+                        const mesVista0 = viewDate.getMonth();
+                        const anioVista = viewDate.getFullYear();
+
+
                         const feriadosMes = (data || []).filter(h => {
                             const s = h.date ?? h.fecha ?? h.Fecha;
-                            const d = s ? new Date(s) : null;
-                            return d && d.getMonth() === mesActual0;
+                            const d = parseLocalDate(s);
+                            return d && d.getFullYear() === anioVista && d.getMonth() === mesVista0;
                         });
 
-                        feriadoList.innerHTML = "<h4>Feriados del mes:</h4><ul>" +
-                            feriadosMes.map(h => {
-                                const nombre = h.title ?? h.nombre ?? h.Nombre ?? 'Feriado';
-                                const irr = (h.inalienable ?? h.irrenunciable ?? h.Irrenunciable ?? h.mandatory ?? h.obligatorio)
-                                    ? " (Irrenunciable)" : "";
-                                return `<li>${nombre}${irr}</li>`;
-                            }).join('') +
-                            "</ul>";
+                        feriadoList.innerHTML =
+                            "<h4>Feriados del mes:</h4>" +
+                            (feriadosMes.length
+                                ? "<ul>" + feriadosMes.map(h => {
+                                    const nombre = h.title ?? h.nombre ?? h.Nombre ?? 'Feriado';
+                                    const irr = (h.inalienable ?? h.irrenunciable ?? h.Irrenunciable ?? h.mandatory ?? h.obligatorio)
+                                        ? " (Irrenunciable)" : "";
+                                    return `<li>${nombre}${irr}</li>`;
+                                }).join('') + "</ul>"
+                                : "<p>No hay feriados este mes.</p>");
+
                     } catch (error) {
-                        // (7) MANEJO DE ERRORES AMIGABLE Y LOG PARA CONSOLA
                         feriadoList.innerHTML = "<p style='color: red;'>No se pudo cargar la información de feriados.</p>";
                         console.error('[Feriados] Error cargando datos:', error);
                         if (failureCallback) failureCallback(error);
